@@ -1,18 +1,5 @@
-import { AppError } from './errors';
-
-// Stripe checkout success URL pattern
-const STRIPE_SUCCESS_PATTERN = /^https:\/\/buy\.stripe\.com/;
-
-export function verifyStripeCheckout(): boolean {
-  const referrer = document.referrer;
-  return STRIPE_SUCCESS_PATTERN.test(referrer);
-}
-
-export function validateCheckoutSuccess(): void {
-  if (!verifyStripeCheckout()) {
-    throw new AppError(
-      'Invalid signup attempt. Please complete the checkout process first.',
-      'INVALID_CHECKOUT'
-    );
-  }
-}
+// This file is intentionally empty.
+// Payment verification has been moved to Supabase Edge Functions.
+// Use src/services/stripeService.ts to initiate checkout or portal sessions.
+// Use src/hooks/useSubscription.ts to read subscription status from the database.
+export {};

@@ -1,50 +1,45 @@
 import React, { useState } from 'react';
 import { X, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useSearchParams } from 'react-router-dom';
-import { validateCheckoutSuccess } from '../utils/stripeVerification';
 
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  showSubscription?: boolean;
+  /** Which mode to open in. Defaults to 'signin'. */
+  defaultMode?: 'signin' | 'signup';
 }
 
-export default function AuthModal({ isOpen, onClose, showSubscription = false }: AuthModalProps) {
+export default function AuthModal({ isOpen, onClose, defaultMode = 'signin' }: AuthModalProps) {
   const { signIn, signUp, error } = useAuth();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [mode, setMode] = useState<'signin' | 'signup'>(defaultMode);
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    name: ''
-  });
+  const [formData, setFormData] = useState({ email: '', password: '', name: '' });
 
   if (!isOpen) return null;
+
+  const isSignUp = mode === 'signup';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      // Only validate checkout for signup with subscription
-      if (showSubscription) {
-        validateCheckoutSuccess();
+      if (isSignUp) {
         await signUp(formData.email, formData.password, formData.name);
-        // Remove checkout parameter after successful signup
-        if (searchParams.has('checkout')) {
-          searchParams.delete('checkout');
-          setSearchParams(searchParams);
-        }
       } else {
         await signIn(formData.email, formData.password);
       }
       onClose();
-    } catch (error) {
-      // Error is handled by AuthContext
+    } catch {
+      // Error state is set by AuthContext and rendered below
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleModeSwitch = () => {
+    setMode(isSignUp ? 'signin' : 'signup');
+    setFormData({ email: '', password: '', name: '' });
   };
 
   return (
@@ -52,7 +47,7 @@ export default function AuthModal({ isOpen, onClose, showSubscription = false }:
       <div className="bg-white rounded-lg max-w-md w-full p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">
-            {showSubscription ? 'Payment Successful! - Create your account for instant access' : 'Sign in to your account'}
+            {isSignUp ? 'Create your account' : 'Sign in to your account'}
           </h2>
           <button
             onClick={onClose}
@@ -71,7 +66,7 @@ export default function AuthModal({ isOpen, onClose, showSubscription = false }:
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {showSubscription && (
+          {isSignUp && (
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
                 Full Name
@@ -81,12 +76,12 @@ export default function AuthModal({ isOpen, onClose, showSubscription = false }:
                 id="name"
                 required
                 value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
               />
             </div>
           )}
-          
+
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
               Email
@@ -96,7 +91,7 @@ export default function AuthModal({ isOpen, onClose, showSubscription = false }:
               id="email"
               required
               value={formData.email}
-              onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+              onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
           </div>
@@ -111,7 +106,7 @@ export default function AuthModal({ isOpen, onClose, showSubscription = false }:
               required
               minLength={6}
               value={formData.password}
-              onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+              onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
           </div>
@@ -119,18 +114,29 @@ export default function AuthModal({ isOpen, onClose, showSubscription = false }:
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-2 px-4 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full py-2 px-4 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
           >
             {isLoading ? (
               <>
                 <Loader2 className="h-5 w-5 animate-spin" />
-                <span>Please wait...</span>
+                <span>Please wait…</span>
               </>
             ) : (
-              <span>{showSubscription ? 'Create Account' : 'Sign In'}</span>
+              <span>{isSignUp ? 'Create Account' : 'Sign In'}</span>
             )}
           </button>
         </form>
+
+        <p className="mt-4 text-center text-sm text-gray-600">
+          {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
+          <button
+            type="button"
+            onClick={handleModeSwitch}
+            className="text-teal-600 hover:text-teal-700 font-medium"
+          >
+            {isSignUp ? 'Sign in' : 'Create one'}
+          </button>
+        </p>
       </div>
     </div>
   );
