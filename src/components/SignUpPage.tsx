@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { CreditCard, BookOpen, Brain, CheckCircle2, Zap, Loader2, RefreshCw, AlertCircle } from 'lucide-react';
-import AuthModal from './AuthModal';
 import { useAuth } from '../context/AuthContext';
 import { createCheckoutSession } from '../services/stripeService';
 
@@ -11,7 +11,6 @@ interface SignUpPageProps {
 
 export default function SignUpPage({ isUpgrade = false }: SignUpPageProps) {
   const { user } = useAuth();
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
@@ -95,12 +94,12 @@ export default function SignUpPage({ isUpgrade = false }: SignUpPageProps) {
             </button>
           ) : (
             /* Unauthenticated users create a free account first */
-            <button
-              onClick={() => setIsAuthModalOpen(true)}
-              className="w-full py-3 px-6 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors mb-8"
+            <Link
+              to="/signup"
+              className="block w-full py-3 px-6 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors mb-8 text-center font-medium"
             >
               Get Started — Create Free Account
-            </button>
+            </Link>
           )}
 
           <div className="space-y-6">
@@ -119,21 +118,12 @@ export default function SignUpPage({ isUpgrade = false }: SignUpPageProps) {
         {!user && (
           <p className="mt-8 text-sm text-gray-500">
             Already have an account?{' '}
-            <button
-              onClick={() => setIsAuthModalOpen(true)}
-              className="text-teal-600 hover:text-teal-700 underline"
-            >
+            <Link to="/login" className="text-teal-600 hover:text-teal-700 underline">
               Sign in
-            </button>
+            </Link>
           </p>
         )}
       </div>
-
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
-        defaultMode="signup"
-      />
     </div>
   );
 }
