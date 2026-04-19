@@ -1,0 +1,27 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isUserData(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Allow users to access their own progress data
+    match /progress/{userId} {
+      allow read, write: if isUserData(userId);
+    }
+
+    // Allow users to access their own SRS data
+    match /srs/{userId} {
+      allow read, write: if isUserData(userId);
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
