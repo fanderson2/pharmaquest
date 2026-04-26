@@ -24,19 +24,24 @@ async function createTestUser() {
 
     // Create user with admin API
     const { data, error } = await supabase.auth.admin.createUser({
-      email: 'test@example.com',
-      password: 'test',
-      email_confirm: true
+      email: 'test@pharmaquest.co.uk',
+      password: 'TestUser123!',
+      email_confirm: true,
+      user_metadata: { name: 'Test User' },
     });
 
     if (error) {
+      if (error.message?.includes('already been registered')) {
+        console.log('ℹ️  User already exists — no changes made.');
+        return;
+      }
       console.error('❌ Error creating test user:', error);
       process.exit(1);
     }
 
     console.log('✅ Test user created successfully!');
-    console.log('📧 Email: test@example.com');
-    console.log('🔑 Password: test');
+    console.log('📧 Email: test@pharmaquest.co.uk');
+    console.log('🔑 Password: TestUser123!');
     console.log('User ID:', data.user.id);
 
   } catch (error) {

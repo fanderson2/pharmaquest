@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronDown, ChevronRight, PlayCircle } from 'lucide-react';
+import { ChevronDown, ChevronRight, PlayCircle, Lock } from 'lucide-react';
 import { useSearch } from '../context/SearchContext';
 import { useProgress } from '../hooks/useProgress';
 import { getQuestionCountForTopic } from '../utils/questionCounter';
@@ -15,9 +15,10 @@ interface Topic {
 interface TopicListProps {
   topic: Topic;
   sectionId: string;
+  locked?: boolean;
 }
 
-export default function TopicList({ topic, sectionId }: TopicListProps) {
+export default function TopicList({ topic, sectionId, locked = false }: TopicListProps) {
   const navigate = useNavigate();
   const [isExpanded, setIsExpanded] = useState(false);
   const [hoveredItem, setHoveredItem] = useState<number | null>(null);
@@ -70,11 +71,13 @@ export default function TopicList({ topic, sectionId }: TopicListProps) {
 
   return (
     <div className="mt-2">
-      <div 
-        className={`flex items-center justify-between p-3 bg-white rounded-lg cursor-pointer hover:bg-gray-50 transition-colors ${
-          topicMatches ? 'bg-teal-50 ring-2 ring-teal-200' : ''
+      <div
+        className={`flex items-center justify-between p-3 bg-white rounded-lg transition-colors ${
+          locked
+            ? 'opacity-60 cursor-default'
+            : `cursor-pointer hover:bg-gray-50 ${topicMatches ? 'bg-teal-50 ring-2 ring-teal-200' : ''}`
         }`}
-        onClick={() => setIsExpanded(!isExpanded)}
+        onClick={locked ? undefined : () => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center gap-2">
           {isExpanded ? (
@@ -91,21 +94,28 @@ export default function TopicList({ topic, sectionId }: TopicListProps) {
             </div>
           </div>
         </div>
-        <button 
-          className="px-4 py-1.5 text-sm font-medium text-teal-600 bg-white rounded-full border border-teal-600 hover:bg-teal-50 transition-all"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleStartQuiz();
-          }}
-        >
-          <span className="flex items-center gap-1">
-            <PlayCircle className="w-4 h-4" />
-            Start Quiz
+        {locked ? (
+          <span className="flex items-center gap-1.5 px-4 py-1.5 text-sm text-gray-400 bg-gray-100 rounded-full">
+            <Lock className="w-3.5 h-3.5" />
+            Locked
           </span>
-        </button>
+        ) : (
+          <button
+            className="px-4 py-1.5 text-sm font-medium text-teal-600 bg-white rounded-full border border-teal-600 hover:bg-teal-50 transition-all"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleStartQuiz();
+            }}
+          >
+            <span className="flex items-center gap-1">
+              <PlayCircle className="w-4 h-4" />
+              Start Quiz
+            </span>
+          </button>
+        )}
       </div>
       
-      {isExpanded && (
+      {isExpanded && !locked && (
         <div className="mt-1 pl-4">
           <p className="text-sm font-medium text-gray-600 mb-2 mt-3">Topics in this Quiz:</p>
           <div className="space-y-1">

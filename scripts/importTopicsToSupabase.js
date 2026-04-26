@@ -7,16 +7,17 @@ import dotenv from 'dotenv';
 // Load environment variables
 dotenv.config();
 
-// Initialize Supabase client
+// Initialize Supabase client with service role key (required: topics table is
+// restricted to service_role writes by the final RLS migration).
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Missing Supabase environment variables');
+if (!supabaseUrl || !serviceRoleKey) {
+  console.error('Missing VITE_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env');
   process.exit(1);
 }
 
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+const supabase = createClient(supabaseUrl, serviceRoleKey);
 
 async function importTopics() {
   try {

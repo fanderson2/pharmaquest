@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, AlertCircle, CheckCircle2, ArrowRight, Flag } from 'lucide-react';
 import { useQuiz } from '../context/QuizContext';
 import { useAuth } from '../context/AuthContext';
+import { useSubscription } from '../hooks/useSubscription';
+import { useFreeTopic } from '../hooks/useFreeTopic';
 import { useSRS } from '../hooks/useSRS';
 import { useProgress } from '../hooks/useProgress';
 import QuizSummary from './QuizSummary';
@@ -13,6 +15,8 @@ import type { Question } from '../types/question';
 export default function QuizPage() {
   const { topic, subtopic } = useParams();
   const navigate = useNavigate();
+  const { isActive, loading: subLoading } = useSubscription();
+  const freeTopicId = useFreeTopic();
   const { user } = useAuth();
   const { updateQuestionSRS } = useSRS();
   const { updateProgress, updateQuestionStatus, progress } = useProgress();
@@ -35,6 +39,14 @@ export default function QuizPage() {
 
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Redirect non-subscribers away from locked topics
+  useEffect(() => {
+    if (subLoading || isActive || freeTopicId === null) return;
+    if (topic && topic !== freeTopicId) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [subLoading, isActive, freeTopicId, topic, navigate]);
 
   // Find the section that contains this topic
   const section = sections.find(section => 
@@ -152,6 +164,7 @@ export default function QuizPage() {
             correctAnswers={correctAnswers}
             topic={decodeURIComponent(topic!)}
             subtopic={subtopic ? decodeURIComponent(subtopic) : undefined}
+            showUpgrade={!isActive}
             onRetry={async () => {
               resetQuiz();
               if (topic) {

@@ -29,18 +29,32 @@ CREATE TABLE IF NOT EXISTS topics (
   updated_at timestamptz DEFAULT now()
 );
 
--- Enable RLS
+-- Enable RLS (idempotent)
 ALTER TABLE topics ENABLE ROW LEVEL SECURITY;
 
--- Add policy for public read access
-CREATE POLICY "Allow public read access to topics"
-  ON topics
-  FOR SELECT
-  TO public
-  USING (true);
+-- Add policy for public read access (guard against duplicate from previous migration)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE tablename = 'topics'
+      AND policyname = 'Allow public read access to topics'
+  ) THEN
+    CREATE POLICY "Allow public read access to topics"
+      ON topics FOR SELECT TO public USING (true);
+  END IF;
+END $$;
 
--- Add updated_at trigger
-CREATE TRIGGER update_topics_updated_at
-  BEFORE UPDATE ON topics
-  FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at();
+-- Add updated_at trigger (guard against duplicate)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger
+    WHERE tgname = 'update_topics_updated_at'
+  ) THEN
+    CREATE TRIGGER update_topics_updated_at
+      BEFORE UPDATE ON topics
+      FOR EACH ROW
+      EXECUTE FUNCTION update_updated_at();
+  END IF;
+END $$;
