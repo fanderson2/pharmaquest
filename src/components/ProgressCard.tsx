@@ -68,31 +68,40 @@ export default function ProgressCard({
       </div>
       
       {user && (
-        <>
-          <div className="relative h-2.5 bg-white/50 rounded-full overflow-hidden">
-            <div 
+        <div className="mt-2">
+          <div className="flex items-center justify-between mb-1.5">
+            {loading ? (
+              <div className="h-3.5 w-32 bg-gray-300 rounded animate-pulse" />
+            ) : (
+              <span className="text-xs text-gray-500">
+                {completedQuestions.toLocaleString()} / {totalQuestions.toLocaleString()} questions
+              </span>
+            )}
+            {loading ? (
+              <div className="h-3.5 w-10 bg-gray-300 rounded animate-pulse" />
+            ) : (
+              <span className="text-sm font-bold text-teal-700">{progressPercentage}% Complete</span>
+            )}
+          </div>
+          <div className="relative h-3 bg-white rounded-full overflow-hidden shadow-inner border border-white/60">
+            <div
               className={`absolute left-0 top-0 h-full rounded-full transition-all duration-500 ease-out ${
-                loading ? 'bg-gray-300 animate-pulse' : 'bg-teal-600'
+                loading
+                  ? 'bg-gray-300 animate-pulse w-full'
+                  : progressPercentage === 0
+                  ? 'w-0'
+                  : progressPercentage === 100
+                  ? 'bg-teal-500 w-full'
+                  : 'bg-gradient-to-r from-teal-400 to-teal-600'
               }`}
-              style={{ width: loading ? '100%' : `${progressPercentage}%` }}
+              style={loading || progressPercentage === 0 ? undefined : { width: `${progressPercentage}%` }}
               role="progressbar"
               aria-valuenow={progressPercentage}
               aria-valuemin={0}
               aria-valuemax={100}
             />
           </div>
-          <div className="mt-2 text-right font-semibold">
-            {loading ? (
-              <div className="flex justify-end items-center gap-2">
-                <div className="h-4 w-24 bg-gray-300 rounded animate-pulse"></div>
-              </div>
-            ) : (
-              <span className="text-teal-600">
-                {completedQuestions.toLocaleString()} / {totalQuestions.toLocaleString()} Questions Complete ({progressPercentage}%)
-              </span>
-            )}
-          </div>
-        </>
+        </div>
       )}
       
       {isExpanded && (
