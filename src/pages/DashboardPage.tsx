@@ -6,6 +6,7 @@ import TopicList from '../components/TopicList';
 import WeaknessHeatmap from '../components/WeaknessHeatmap';
 import RankCard from '../components/RankCard';
 import ExamReadinessGauge from '../components/ExamReadinessGauge';
+import SmartPracticeCard from '../components/SmartPracticeCard';
 import { CheckoutProcessing } from '../components/SignUpPage';
 import { useAuth } from '../context/AuthContext';
 import { useSubscription } from '../hooks/useSubscription';
@@ -127,6 +128,7 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gray-50">
       <main className="max-w-7xl mx-auto px-6 py-8">
         {!isActive && <TrialBanner lockedTopics={lockedTopics} />}
+        <SmartPracticeCard />
         <RankCard />
         <ExamReadinessGauge />
         <WeaknessHeatmap sections={sections} />

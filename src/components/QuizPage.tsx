@@ -21,7 +21,9 @@ export default function QuizPage() {
   const { topic, subtopic } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const isFocusMode = topic === '__focus__';
+  // Both special modes use pre-loaded questions from router state and skip
+  // subscription / section-progress logic.
+  const isFocusMode = topic === '__focus__' || topic === '__smart__';
   const { isActive, loading: subLoading } = useSubscription();
   const freeTopicId = useFreeTopic();
   const { user } = useAuth();
@@ -224,7 +226,9 @@ export default function QuizPage() {
             <div className="flex items-center justify-between mb-6 md:mb-8">
               <div>
                 <h1 className="text-xl md:text-2xl font-bold text-gray-800 mb-2 break-words">
-                  {isFocusMode ? '⚡ Focus Mode' : (subtopic || topic)}
+                  {topic === '__smart__' ? '🧠 Smart Practice'
+                    : topic === '__focus__' ? '⚡ Focus Mode'
+                    : (subtopic || topic)}
                 </h1>
                 <div className="h-1 w-24 bg-teal-500 rounded"></div>
               </div>
