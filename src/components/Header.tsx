@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, User, X, LogOut } from 'lucide-react';
+import { Search, User, X, LogOut, Trophy, Settings2 } from 'lucide-react';
 import Logo from './Logo';
 import StreakBadge from './StreakBadge';
 import XPBar from './XPBar';
@@ -86,6 +86,21 @@ export default function Header() {
                   <p className="text-xs text-gray-400">Signed in as</p>
                   <p className="text-sm font-medium text-gray-900 max-w-[160px] truncate">{displayName}</p>
                 </div>
+                <Link
+                  to="/leaderboard"
+                  title="Leaderboard"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-full text-gray-600 hover:text-amber-600 hover:bg-amber-50 transition-colors"
+                >
+                  <Trophy className="h-4 w-4" />
+                  <span className="hidden md:inline text-sm font-medium">Leaderboard</span>
+                </Link>
+                <Link
+                  to="/settings"
+                  title="Settings"
+                  className="p-2 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+                >
+                  <Settings2 className="h-4 w-4" />
+                </Link>
                 <button
                   onClick={handleSignOut}
                   title="Sign out"

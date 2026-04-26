@@ -9,6 +9,8 @@ import SignupPage from './pages/SignupPage';
 import AuthCallbackPage from './pages/AuthCallbackPage';
 import DashboardPage from './pages/DashboardPage';
 import OnboardingPage from './pages/OnboardingPage';
+import LeaderboardPage from './pages/LeaderboardPage';
+import SettingsPage from './pages/SettingsPage';
 import { SearchProvider } from './context/SearchContext';
 import { AuthProvider } from './context/AuthContext';
 import { ProfileProvider } from './context/ProfileContext';
@@ -65,6 +67,12 @@ function AppShell() {
         } />
         <Route path="/quiz/:topic/:subtopic" element={
           <ProtectedRoute><QuizPage /></ProtectedRoute>
+        } />
+        <Route path="/leaderboard" element={
+          <ProtectedRoute><LeaderboardPage /></ProtectedRoute>
+        } />
+        <Route path="/settings" element={
+          <ProtectedRoute><SettingsPage /></ProtectedRoute>
         } />
       </Routes>
     </div>
