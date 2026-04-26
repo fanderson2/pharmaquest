@@ -5,6 +5,7 @@ import ProgressCard from '../components/ProgressCard';
 import TopicList from '../components/TopicList';
 import WeaknessHeatmap from '../components/WeaknessHeatmap';
 import RankCard from '../components/RankCard';
+import ExamReadinessGauge from '../components/ExamReadinessGauge';
 import { CheckoutProcessing } from '../components/SignUpPage';
 import { useAuth } from '../context/AuthContext';
 import { useSubscription } from '../hooks/useSubscription';
@@ -127,6 +128,7 @@ export default function DashboardPage() {
       <main className="max-w-7xl mx-auto px-6 py-8">
         {!isActive && <TrialBanner lockedTopics={lockedTopics} />}
         <RankCard />
+        <ExamReadinessGauge />
         <WeaknessHeatmap sections={sections} />
         <h2 className="text-xl text-gray-700 mb-6">
           Click on a section below to start a Pre-Reg quiz!
