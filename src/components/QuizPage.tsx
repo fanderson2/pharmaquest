@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, AlertCircle, CheckCircle2, ArrowRight, Flag } from 'lucide-react';
 import { useQuiz } from '../context/QuizContext';
 import { useAuth } from '../context/AuthContext';
@@ -20,6 +20,8 @@ const MILESTONE_XP: Record<number, number> = { 7: 50, 30: 100, 100: 250 };
 export default function QuizPage() {
   const { topic, subtopic } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isFocusMode = topic === '__focus__';
   const { isActive, loading: subLoading } = useSubscription();
   const freeTopicId = useFreeTopic();
   const { user } = useAuth();
@@ -48,13 +50,13 @@ export default function QuizPage() {
   const [milestoneStreak, setMilestoneStreak] = useState<number | null>(null);
   const questionStartTimeRef = useRef<number>(Date.now());
 
-  // Redirect non-subscribers away from locked topics
+  // Redirect non-subscribers away from locked topics (skip for focus mode)
   useEffect(() => {
-    if (subLoading || isActive || freeTopicId === null) return;
+    if (isFocusMode || subLoading || isActive || freeTopicId === null) return;
     if (topic && !freeTopicId.has(topic)) {
       navigate('/dashboard', { replace: true });
     }
-  }, [subLoading, isActive, freeTopicId, topic, navigate]);
+  }, [isFocusMode, subLoading, isActive, freeTopicId, topic, navigate]);
 
   // Find the section that contains this topic
   const section = sections.find(section => 
@@ -63,24 +65,29 @@ export default function QuizPage() {
 
   useEffect(() => {
     async function loadQuestions() {
-      if (topic) {
-        setLoading(true);
-        try {
+      if (!topic) return;
+      setLoading(true);
+      try {
+        if (isFocusMode) {
+          // Questions pre-loaded by WeaknessHeatmap and passed via nav state
+          const focusQuestions = (location.state as { questions?: import('../types/question').Question[] } | null)?.questions ?? [];
+          setQuestions(focusQuestions);
+        } else {
           const quizQuestions = await getQuestionsForTopic(
-            decodeURIComponent(topic), 
+            decodeURIComponent(topic),
             subtopic ? decodeURIComponent(subtopic) : undefined
           );
           setQuestions(quizQuestions);
-          resetQuiz();
-        } catch (error) {
-          console.error('Error loading questions:', error);
-        } finally {
-          setLoading(false);
         }
+        resetQuiz();
+      } catch (error) {
+        console.error('Error loading questions:', error);
+      } finally {
+        setLoading(false);
       }
     }
     loadQuestions();
-  }, [topic, subtopic]);
+  }, [topic, subtopic, isFocusMode]);
 
   // Reset per-question timer whenever the question advances
   useEffect(() => {
@@ -88,25 +95,29 @@ export default function QuizPage() {
   }, [currentQuestionIndex]);
 
   const handleSubmitAnswer = async () => {
-    if (!currentQuestion || !selectedAnswer || !section?.id || !topic) return;
+    if (!currentQuestion || !selectedAnswer) return;
+    if (!isFocusMode && (!section?.id || !topic)) return;
 
     setSubmitting(true);
     try {
       const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
       const timeTaken = Math.round((Date.now() - questionStartTimeRef.current) / 1000);
       const oldStreak = profile?.current_streak ?? 0;
+      // In focus mode use the question's own topicId; otherwise use the URL topic param
+      const recordTopic = currentQuestion.topicId ?? topic ?? '__focus__';
 
-      const ops: Promise<unknown>[] = [
-        updateQuestionSRS(currentQuestion.id, isCorrect),
-        updateQuestionStatus(section.id, topic, currentQuestion.id, isCorrect),
-      ];
+      const ops: Promise<unknown>[] = [updateQuestionSRS(currentQuestion.id, isCorrect)];
+
+      if (!isFocusMode && section?.id && topic) {
+        ops.push(updateQuestionStatus(section.id, topic, currentQuestion.id, isCorrect));
+      }
 
       if (user) {
         ops.push(
           recordQuizAttempt({
             user_id: user.id,
             question_id: currentQuestion.id,
-            topic,
+            topic: recordTopic,
             user_answer: selectedAnswer,
             is_correct: isCorrect,
             time_taken_seconds: timeTaken,
@@ -132,12 +143,9 @@ export default function QuizPage() {
   };
 
   const handleNextQuestion = async () => {
-    if (!hasNextQuestion && topic && section?.id && user) {
-      // Calculate and update progress when quiz is complete
+    if (!isFocusMode && !hasNextQuestion && topic && section?.id && user) {
       const availableQuestions = getAvailableQuestionCount(topic, progress, section.id, subtopic);
       const progressPercentage = Math.round((correctAnswers / availableQuestions) * 100);
-      
-      // Update section progress
       await updateProgress(section.id, progressPercentage);
     }
     moveToNextQuestion();
@@ -161,7 +169,7 @@ export default function QuizPage() {
       <div className="min-h-screen bg-gray-50 p-4 md:p-6">
         <div className="max-w-4xl mx-auto">
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/dashboard')}
             className="flex items-center gap-2 text-teal-600 hover:text-teal-700 mb-8"
           >
             <ArrowLeft className="h-5 w-5" />
@@ -216,7 +224,7 @@ export default function QuizPage() {
             <div className="flex items-center justify-between mb-6 md:mb-8">
               <div>
                 <h1 className="text-xl md:text-2xl font-bold text-gray-800 mb-2 break-words">
-                  {subtopic || topic}
+                  {isFocusMode ? '⚡ Focus Mode' : (subtopic || topic)}
                 </h1>
                 <div className="h-1 w-24 bg-teal-500 rounded"></div>
               </div>

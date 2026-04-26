@@ -4,4 +4,5 @@ export interface Question {
   options: string[];
   correctAnswer: string;
   explanation: string;
+  topicId?: string; // set in focus-mode questions to record correct topic
 }

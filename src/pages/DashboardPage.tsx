@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Book, Pill, AlertTriangle, ShoppingBag, Scale, Stethoscope, Tablets, Lock, Loader2 } from 'lucide-react';
 import ProgressCard from '../components/ProgressCard';
 import TopicList from '../components/TopicList';
+import WeaknessHeatmap from '../components/WeaknessHeatmap';
 import { CheckoutProcessing } from '../components/SignUpPage';
 import { useAuth } from '../context/AuthContext';
 import { useSubscription } from '../hooks/useSubscription';
@@ -124,6 +125,7 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gray-50">
       <main className="max-w-7xl mx-auto px-6 py-8">
         {!isActive && <TrialBanner lockedTopics={lockedTopics} />}
+        <WeaknessHeatmap sections={sections} />
         <h2 className="text-xl text-gray-700 mb-6">
           Click on a section below to start a Pre-Reg quiz!
         </h2>
