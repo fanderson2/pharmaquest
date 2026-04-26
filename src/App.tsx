@@ -1,8 +1,7 @@
 import { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import Header from './components/Header';
 import ProtectedRoute from './components/ProtectedRoute';
-import SignUpPage from './components/SignUpPage';
 import QuizPage from './components/QuizPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
@@ -11,6 +10,7 @@ import DashboardPage from './pages/DashboardPage';
 import OnboardingPage from './pages/OnboardingPage';
 import LeaderboardPage from './pages/LeaderboardPage';
 import SettingsPage from './pages/SettingsPage';
+import LandingPage from './pages/LandingPage';
 import { SearchProvider } from './context/SearchContext';
 import { AuthProvider } from './context/AuthContext';
 import { ProfileProvider } from './context/ProfileContext';
@@ -34,20 +34,20 @@ function HomePage() {
     );
   }
 
-  // Unauthenticated → marketing / sign-up page
-  return <SignUpPage />;
+  return <LandingPage />;
 }
 
-/** Routes that render without the app Header (auth flows). */
-const AUTH_PATHS = ['/login', '/signup', '/auth/callback', '/onboarding'];
+/** Paths that render without the app Header (auth flows + landing page). */
+const NO_HEADER_PATHS = ['/', '/login', '/signup', '/auth/callback', '/onboarding'];
 
 function AppShell() {
-  const { pathname } = window.location;
-  const isAuthPage = AUTH_PATHS.some((p) => pathname.startsWith(p));
+  const { pathname } = useLocation();
+  const isNoHeader =
+    pathname === '/' || NO_HEADER_PATHS.some((p) => p !== '/' && pathname.startsWith(p));
 
   return (
     <div className="min-h-screen flex flex-col">
-      {!isAuthPage && <Header />}
+      {!isNoHeader && <Header />}
       <Routes>
         {/* ── Public ───────────────────────────────────────────────────── */}
         <Route path="/" element={<HomePage />} />

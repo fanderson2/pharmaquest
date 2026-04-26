@@ -38,6 +38,16 @@ export async function fetchQuestionsForTopic(topicId: string): Promise<Question[
   }));
 }
 
+export async function getDailyAttemptCount(userId: string): Promise<number> {
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const { count } = await supabase
+    .from('quiz_attempts')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .gte('attempted_at', since);
+  return count ?? 0;
+}
+
 export async function fetchQuestionsForTopicAndSubtopic(
   topicId: string,
   subtopic: string

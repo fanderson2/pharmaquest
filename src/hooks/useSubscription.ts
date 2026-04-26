@@ -35,8 +35,10 @@ export function useSubscription() {
     load();
   }, [user?.id]);
 
-  const isActive =
+  const isPro =
     subscription?.status === 'active' || subscription?.status === 'trialing';
 
-  return { subscription, loading, isActive };
+  const plan = (subscription?.plan ?? 'free') as 'free' | 'pro';
+
+  return { subscription, loading, isLoading: loading, isActive: isPro, isPro, plan };
 }

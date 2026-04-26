@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, AlertCircle, CheckCircle2, ArrowRight, Flag } from 'lucide-react';
+import { ArrowLeft, AlertCircle, CheckCircle2, ArrowRight, Flag, Lock, Loader2, Sparkles } from 'lucide-react';
 import { useQuiz } from '../context/QuizContext';
 import { useAuth } from '../context/AuthContext';
 import { useProfile } from '../context/ProfileContext';
@@ -12,10 +12,56 @@ import QuizSummary from './QuizSummary';
 import MilestoneToast from './MilestoneToast';
 import { sections } from '../data/sections';
 import { getAvailableQuestionCount } from '../utils/questionCounter';
-import { recordQuizAttempt } from '../services/questionService';
+import { recordQuizAttempt, getDailyAttemptCount } from '../services/questionService';
+import { createCheckoutSession } from '../services/stripeService';
 import type { Question } from '../types/question';
 
 const MILESTONE_XP: Record<number, number> = { 7: 50, 30: 100, 100: 250 };
+const DAILY_FREE_LIMIT = 20;
+
+function DailyCapModal() {
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const handleUpgrade = async () => {
+    setLoading(true);
+    try {
+      const url = await createCheckoutSession('pro');
+      window.location.href = url;
+    } catch {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-lg max-w-sm w-full p-8 text-center">
+        <div className="w-14 h-14 rounded-2xl bg-amber-50 flex items-center justify-center mx-auto mb-4">
+          <Lock className="h-7 w-7 text-amber-500" />
+        </div>
+        <h2 className="text-xl font-bold text-gray-900 mb-2">Daily limit reached</h2>
+        <p className="text-sm text-gray-500 mb-6">
+          Free accounts can answer {DAILY_FREE_LIMIT} questions per day. Upgrade to Pro for
+          unlimited access to the full question bank.
+        </p>
+        <button
+          onClick={handleUpgrade}
+          disabled={loading}
+          className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-teal-600 hover:bg-teal-700 disabled:opacity-60 text-white font-semibold rounded-xl transition-colors mb-3"
+        >
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+          Get Pro — £9.99/mo
+        </button>
+        <button
+          onClick={() => navigate('/dashboard')}
+          className="w-full text-sm text-gray-500 hover:text-gray-700 py-2"
+        >
+          Back to dashboard
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function QuizPage() {
   const { topic, subtopic } = useParams();
@@ -24,7 +70,7 @@ export default function QuizPage() {
   // Both special modes use pre-loaded questions from router state and skip
   // subscription / section-progress logic.
   const isFocusMode = topic === '__focus__' || topic === '__smart__';
-  const { isActive, loading: subLoading } = useSubscription();
+  const { isPro, loading: subLoading } = useSubscription();
   const freeTopicId = useFreeTopic();
   const { user } = useAuth();
   const { updateQuestionSRS } = useSRS();
@@ -50,18 +96,19 @@ export default function QuizPage() {
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [milestoneStreak, setMilestoneStreak] = useState<number | null>(null);
+  const [dailyCapHit, setDailyCapHit] = useState(false);
   const questionStartTimeRef = useRef<number>(Date.now());
 
   // Redirect non-subscribers away from locked topics (skip for focus mode)
   useEffect(() => {
-    if (isFocusMode || subLoading || isActive || freeTopicId === null) return;
+    if (isFocusMode || subLoading || isPro || freeTopicId === null) return;
     if (topic && !freeTopicId.has(topic)) {
       navigate('/dashboard', { replace: true });
     }
-  }, [isFocusMode, subLoading, isActive, freeTopicId, topic, navigate]);
+  }, [isFocusMode, subLoading, isPro, freeTopicId, topic, navigate]);
 
   // Find the section that contains this topic
-  const section = sections.find(section => 
+  const section = sections.find(section =>
     section.topics.some(t => t.id === topic)
   );
 
@@ -75,6 +122,15 @@ export default function QuizPage() {
           const focusQuestions = (location.state as { questions?: import('../types/question').Question[] } | null)?.questions ?? [];
           setQuestions(focusQuestions);
         } else {
+          // Check daily cap for free users
+          if (!isPro && user) {
+            const count = await getDailyAttemptCount(user.id);
+            if (count >= DAILY_FREE_LIMIT) {
+              setDailyCapHit(true);
+              setLoading(false);
+              return;
+            }
+          }
           const quizQuestions = await getQuestionsForTopic(
             decodeURIComponent(topic),
             subtopic ? decodeURIComponent(subtopic) : undefined
@@ -153,6 +209,8 @@ export default function QuizPage() {
     moveToNextQuestion();
   };
 
+  if (dailyCapHit) return <DailyCapModal />;
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 p-4 md:p-6">
@@ -196,7 +254,7 @@ export default function QuizPage() {
     <div className="min-h-screen bg-gray-50 p-4 md:p-6">
       <div className="max-w-4xl mx-auto">
         <button
-          onClick={() => navigate('/')}
+          onClick={() => navigate('/dashboard')}
           className="flex items-center gap-2 text-teal-600 hover:text-teal-700 mb-8"
         >
           <ArrowLeft className="h-5 w-5" />
@@ -209,12 +267,12 @@ export default function QuizPage() {
             correctAnswers={correctAnswers}
             topic={decodeURIComponent(topic!)}
             subtopic={subtopic ? decodeURIComponent(subtopic) : undefined}
-            showUpgrade={!isActive}
+            showUpgrade={!isPro}
             onRetry={async () => {
               resetQuiz();
               if (topic) {
                 const quizQuestions = await getQuestionsForTopic(
-                  decodeURIComponent(topic), 
+                  decodeURIComponent(topic),
                   subtopic ? decodeURIComponent(subtopic) : undefined
                 );
                 setQuestions(quizQuestions);
@@ -311,8 +369,8 @@ export default function QuizPage() {
               {isAnswerSubmitted && (
                 <div className="space-y-6">
                   <div className={`p-4 md:p-6 rounded-lg ${
-                    selectedAnswer === currentQuestion.correctAnswer 
-                      ? 'bg-green-50 border border-green-200' 
+                    selectedAnswer === currentQuestion.correctAnswer
+                      ? 'bg-green-50 border border-green-200'
                       : 'bg-red-50 border border-red-200'
                   }`}>
                     <div className="flex items-start gap-3">
@@ -323,15 +381,15 @@ export default function QuizPage() {
                       )}
                       <div>
                         <h3 className={`font-semibold mb-2 ${
-                          selectedAnswer === currentQuestion.correctAnswer 
-                            ? 'text-green-800' 
+                          selectedAnswer === currentQuestion.correctAnswer
+                            ? 'text-green-800'
                             : 'text-red-800'
                         }`}>
                           {selectedAnswer === currentQuestion.correctAnswer ? 'Correct!' : 'Incorrect'}
                         </h3>
                         <p className={`text-sm break-words ${
-                          selectedAnswer === currentQuestion.correctAnswer 
-                            ? 'text-green-700' 
+                          selectedAnswer === currentQuestion.correctAnswer
+                            ? 'text-green-700'
                             : 'text-red-700'
                         }`}>
                           {currentQuestion.explanation}

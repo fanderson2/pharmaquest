@@ -2,7 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Zap, ChevronDown } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useSubscription } from '../hooks/useSubscription';
 import { fetchTopicStats, fetchFocusQuestions } from '../services/heatmapService';
+import ProGate from './ProGate';
 import type { TopicStat } from '../types/heatmap';
 import type { Section } from '../types/topic';
 
@@ -112,6 +114,7 @@ const SORT_LABELS: Record<SortKey, string> = {
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function WeaknessHeatmap({ sections }: Props) {
   const { user } = useAuth();
+  const { isPro } = useSubscription();
   const navigate = useNavigate();
 
   const [stats, setStats] = useState<TopicStat[]>([]);
@@ -156,6 +159,21 @@ export default function WeaknessHeatmap({ sections }: Props) {
       setFocusLoading(false);
     }
   };
+
+  if (!isPro) {
+    return (
+      <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-8">
+        <div className="flex items-center gap-3 mb-1">
+          <div className="w-2 h-6 bg-teal-500 rounded-full" />
+          <h2 className="text-lg font-bold text-gray-800">Performance Heatmap</h2>
+        </div>
+        <ProGate
+          feature="Weakness Heatmap"
+          description="See exactly where you're losing marks. Visual topic breakdowns updated after every quiz."
+        />
+      </div>
+    );
+  }
 
   if (loading) {
     return (

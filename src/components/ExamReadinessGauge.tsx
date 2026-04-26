@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Info, AlertTriangle, Zap, CalendarDays } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useProfile } from '../context/ProfileContext';
+import { useSubscription } from '../hooks/useSubscription';
+import ProGate from './ProGate';
 import {
   fetchReadinessScore,
   fetchReadinessBreakdown,
@@ -297,6 +299,7 @@ function DropBanner({ userId }: { userId: string }) {
 export default function ExamReadinessGauge() {
   const { user } = useAuth();
   const { profile } = useProfile();
+  const { isPro } = useSubscription();
 
   const [score, setScore]         = useState<number | null>(null);
   const [history, setHistory]     = useState<ReadinessPoint[]>([]);
@@ -345,6 +348,21 @@ export default function ExamReadinessGauge() {
     score > 0 &&
     weekAgoScore !== null &&
     score - weekAgoScore <= -10;
+
+  if (!isPro) {
+    return (
+      <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6">
+        <div className="flex items-center gap-3 mb-1">
+          <div className="w-2 h-6 bg-teal-500 rounded-full" />
+          <h2 className="text-lg font-bold text-gray-800">Exam Readiness Score</h2>
+        </div>
+        <ProGate
+          feature="Exam Readiness Score"
+          description="A single live score showing how prepared you are for the GPhC exam, updated daily."
+        />
+      </div>
+    );
+  }
 
   // ── Skeleton ──
   if (loading) {

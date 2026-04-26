@@ -50,7 +50,7 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
-  const { isActive, loading: subLoading } = useSubscription();
+  const { isPro, loading: subLoading } = useSubscription();
 
   const [sections, setSections] = useState<Section[]>([]);
   const [topicsLoading, setTopicsLoading] = useState(true);
@@ -90,7 +90,7 @@ export default function DashboardPage() {
   }, [profileChecked]);
 
   if (subLoading || !profileChecked) return <Spinner message="Loading your account…" />;
-  if (searchParams.get('checkout') === 'success' && !isActive) return <CheckoutProcessing />;
+  if (searchParams.get('checkout') === 'success' && !isPro) return <CheckoutProcessing />;
   if (topicsLoading) return <Spinner message="Loading topics…" />;
 
   if (topicsError) {
@@ -127,7 +127,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <main className="max-w-7xl mx-auto px-6 py-8">
-        {!isActive && <TrialBanner lockedTopics={lockedTopics} />}
+        {!isPro && <TrialBanner lockedTopics={lockedTopics} />}
         <SmartPracticeCard />
         <RankCard />
         <ExamReadinessGauge />
@@ -148,12 +148,12 @@ export default function DashboardPage() {
                 key={topic.id}
                 topic={topic}
                 sectionId={section.id}
-                locked={!isActive && !freeTopicIds.has(topic.id)}
+                locked={!isPro && !freeTopicIds.has(topic.id)}
               />
             ))}
           </ProgressCard>
         ))}
-        {!isActive && <SubscribeBanner />}
+        {!isPro && <SubscribeBanner />}
       </main>
     </div>
   );

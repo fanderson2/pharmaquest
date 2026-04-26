@@ -1,8 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { Lock } from 'lucide-react';
 import { useProfile } from '../context/ProfileContext';
+import { useSubscription } from '../hooks/useSubscription';
 
 export default function StreakBadge() {
   const { profile } = useProfile();
+  const { isPro } = useSubscription();
   const prevStreakRef = useRef<number | null>(null);
   const [pulsing, setPulsing] = useState(false);
 
@@ -20,6 +23,15 @@ export default function StreakBadge() {
     }
     prevStreakRef.current = streak;
   }, [streak]);
+
+  if (!isPro) {
+    return (
+      <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-gray-100 text-gray-400 text-sm font-semibold select-none" title="Upgrade to Pro to track streaks">
+        <span style={{ filter: 'grayscale(1)', opacity: 0.4 }}>🔥</span>
+        <Lock className="h-3 w-3" />
+      </div>
+    );
+  }
 
   return (
     <div className="relative group">

@@ -34,7 +34,7 @@ function BucketLegend() {
 
 export default function SmartPracticeCard() {
   const { user } = useAuth();
-  const { isActive, loading: subLoading } = useSubscription();
+  const { isPro, isLoading: subLoading } = useSubscription();
   const navigate = useNavigate();
 
   const [starting, setStarting] = useState(false);
@@ -73,7 +73,7 @@ export default function SmartPracticeCard() {
   if (subLoading) return null;
 
   // ── Locked state (free users) ─────────────────────────────────────────────
-  if (!isActive) {
+  if (!isPro) {
     return (
       <div className="relative bg-white rounded-2xl border border-gray-200 p-6 mb-6 overflow-hidden">
         {/* Subtle gradient hint */}

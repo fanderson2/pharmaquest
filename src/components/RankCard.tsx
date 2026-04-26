@@ -2,7 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Trophy, TrendingUp, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useSubscription } from '../hooks/useSubscription';
 import { fetchMyRank } from '../services/leaderboardService';
+import ProGate from './ProGate';
 import type { MyRank } from '../types/leaderboard';
 
 function ordinal(n: number): string {
@@ -13,6 +15,7 @@ function ordinal(n: number): string {
 
 export default function RankCard() {
   const { user } = useAuth();
+  const { isPro } = useSubscription();
   const [rank, setRank] = useState<MyRank | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -23,6 +26,16 @@ export default function RankCard() {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [user]);
+
+  if (!isPro) {
+    return (
+      <ProGate
+        feature="Trainee Leaderboard"
+        description="See how you rank against pre-reg trainees nationwide and track your weekly XP."
+        compact
+      />
+    );
+  }
 
   if (loading) {
     return (

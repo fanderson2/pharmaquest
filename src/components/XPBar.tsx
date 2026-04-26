@@ -1,5 +1,7 @@
 import React from 'react';
+import { Lock } from 'lucide-react';
 import { useProfile } from '../context/ProfileContext';
+import { useSubscription } from '../hooks/useSubscription';
 
 function calcLevel(xp: number) {
   const level = Math.floor(Math.sqrt(xp / 100));
@@ -12,8 +14,18 @@ function calcLevel(xp: number) {
 
 export default function XPBar() {
   const { profile } = useProfile();
+  const { isPro } = useSubscription();
   const xp = profile?.total_xp ?? 0;
   const { level, progress } = calcLevel(xp);
+
+  if (!isPro) {
+    return (
+      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-100 text-gray-400 text-xs font-semibold select-none" title="Upgrade to Pro to earn XP">
+        <span className="text-teal-300 font-bold">Lv —</span>
+        <Lock className="h-3 w-3" />
+      </div>
+    );
+  }
 
   return (
     <div className="relative group flex items-center gap-1.5">
