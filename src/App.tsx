@@ -11,6 +11,7 @@ import DashboardPage from './pages/DashboardPage';
 import OnboardingPage from './pages/OnboardingPage';
 import { SearchProvider } from './context/SearchContext';
 import { AuthProvider } from './context/AuthContext';
+import { ProfileProvider } from './context/ProfileContext';
 import { QuizProvider } from './context/QuizContext';
 import { useAuth } from './context/AuthContext';
 
@@ -74,11 +75,13 @@ export default function App() {
   return (
     <AuthProvider>
       <Router>
-        <SearchProvider>
-          <QuizProvider>
-            <AppShell />
-          </QuizProvider>
-        </SearchProvider>
+        <ProfileProvider>
+          <SearchProvider>
+            <QuizProvider>
+              <AppShell />
+            </QuizProvider>
+          </SearchProvider>
+        </ProfileProvider>
       </Router>
     </AuthProvider>
   );

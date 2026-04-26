@@ -7,4 +7,10 @@ export interface Profile {
   exam_date: string | null;
   created_at: string;
   updated_at: string;
+  // Gamification (added in gamification migration)
+  current_streak: number;
+  longest_streak: number;
+  last_active_date: string | null;
+  total_xp: number;
+  show_on_leaderboard: boolean;
 }

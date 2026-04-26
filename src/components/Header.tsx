@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, User, X, LogOut, Settings } from 'lucide-react';
+import { Search, User, X, LogOut } from 'lucide-react';
 import Logo from './Logo';
+import StreakBadge from './StreakBadge';
+import XPBar from './XPBar';
 import { useSearch } from '../context/SearchContext';
 import { useAuth } from '../context/AuthContext';
 
@@ -74,6 +76,12 @@ export default function Header() {
 
             {user ? (
               <div className="flex items-center gap-3">
+                {/* Gamification widgets */}
+                <StreakBadge />
+                <div className="hidden sm:block">
+                  <XPBar />
+                </div>
+
                 <div className="hidden md:block text-right">
                   <p className="text-xs text-gray-400">Signed in as</p>
                   <p className="text-sm font-medium text-gray-900 max-w-[160px] truncate">{displayName}</p>

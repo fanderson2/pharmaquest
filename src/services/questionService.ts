@@ -1,6 +1,20 @@
 import { supabase } from '../lib/supabase';
 import { Question } from '../types/question';
 
+export interface QuizAttemptPayload {
+  user_id: string;
+  question_id: string;
+  topic: string;
+  user_answer: string;
+  is_correct: boolean;
+  time_taken_seconds?: number;
+}
+
+export async function recordQuizAttempt(attempt: QuizAttemptPayload): Promise<void> {
+  const { error } = await supabase.from('quiz_attempts').insert(attempt);
+  if (error) throw error;
+}
+
 export async function fetchQuestionsForTopic(topicId: string): Promise<Question[]> {
   const { data, error } = await supabase
     .from('question_table')

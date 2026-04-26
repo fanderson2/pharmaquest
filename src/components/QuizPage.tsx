@@ -1,16 +1,21 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, AlertCircle, CheckCircle2, ArrowRight, Flag } from 'lucide-react';
 import { useQuiz } from '../context/QuizContext';
 import { useAuth } from '../context/AuthContext';
+import { useProfile } from '../context/ProfileContext';
 import { useSubscription } from '../hooks/useSubscription';
 import { useFreeTopic } from '../hooks/useFreeTopic';
 import { useSRS } from '../hooks/useSRS';
 import { useProgress } from '../hooks/useProgress';
 import QuizSummary from './QuizSummary';
+import MilestoneToast from './MilestoneToast';
 import { sections } from '../data/sections';
 import { getAvailableQuestionCount } from '../utils/questionCounter';
+import { recordQuizAttempt } from '../services/questionService';
 import type { Question } from '../types/question';
+
+const MILESTONE_XP: Record<number, number> = { 7: 50, 30: 100, 100: 250 };
 
 export default function QuizPage() {
   const { topic, subtopic } = useParams();
@@ -37,8 +42,11 @@ export default function QuizPage() {
     resetQuiz
   } = useQuiz();
 
+  const { profile, refreshProfile } = useProfile();
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [milestoneStreak, setMilestoneStreak] = useState<number | null>(null);
+  const questionStartTimeRef = useRef<number>(Date.now());
 
   // Redirect non-subscribers away from locked topics
   useEffect(() => {
@@ -74,22 +82,49 @@ export default function QuizPage() {
     loadQuestions();
   }, [topic, subtopic]);
 
+  // Reset per-question timer whenever the question advances
+  useEffect(() => {
+    questionStartTimeRef.current = Date.now();
+  }, [currentQuestionIndex]);
+
   const handleSubmitAnswer = async () => {
     if (!currentQuestion || !selectedAnswer || !section?.id || !topic) return;
 
     setSubmitting(true);
     try {
       const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
-      
+      const timeTaken = Math.round((Date.now() - questionStartTimeRef.current) / 1000);
+      const oldStreak = profile?.current_streak ?? 0;
+
+      const ops: Promise<unknown>[] = [
+        updateQuestionSRS(currentQuestion.id, isCorrect),
+        updateQuestionStatus(section.id, topic, currentQuestion.id, isCorrect),
+      ];
+
       if (user) {
-        // Run both updates in parallel
-        await Promise.all([
-          updateQuestionSRS(currentQuestion.id, isCorrect),
-          updateQuestionStatus(section.id, topic, currentQuestion.id, isCorrect)
-        ]);
+        ops.push(
+          recordQuizAttempt({
+            user_id: user.id,
+            question_id: currentQuestion.id,
+            topic,
+            user_answer: selectedAnswer,
+            is_correct: isCorrect,
+            time_taken_seconds: timeTaken,
+          })
+        );
       }
-      
-      // Update quiz state
+
+      await Promise.all(ops);
+
+      // Refresh profile so streak/XP widgets update, and detect milestone
+      if (user) {
+        const newProfile = await refreshProfile();
+        const newStreak = newProfile?.current_streak ?? 0;
+        if (newStreak > oldStreak && newStreak in MILESTONE_XP) {
+          setMilestoneStreak(newStreak);
+        }
+      }
+
       submitAnswer();
     } finally {
       setSubmitting(false);
@@ -316,6 +351,14 @@ export default function QuizPage() {
           </div>
         )}
       </div>
+
+      {milestoneStreak !== null && (
+        <MilestoneToast
+          streak={milestoneStreak}
+          xpBonus={MILESTONE_XP[milestoneStreak] ?? 0}
+          onDismiss={() => setMilestoneStreak(null)}
+        />
+      )}
     </div>
   );
 }
