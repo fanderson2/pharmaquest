@@ -12,7 +12,8 @@
     "import-questions": "node --experimental-json-modules scripts/importQuizQuestions.js",
     "import-topics-to-supabase": "node --experimental-json-modules scripts/importTopicsToSupabase.js",
     "import-questions-to-supabase": "node --experimental-json-modules scripts/importQuestionsToSupabase.js",
-    "create-test-user": "node scripts/createTestUserSimple.js"
+    "create-test-user": "node scripts/createTestUserSimple.js",
+    "create-paid-test-user": "node scripts/createPaidTestUser.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.7",

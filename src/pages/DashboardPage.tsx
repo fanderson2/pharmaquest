@@ -115,20 +115,15 @@ export default function DashboardPage() {
     );
   }
 
-  const freeTopicId = sections[0]?.topics[0]?.id;
+  // First topic of each section is free — derive directly from loaded data.
+  const freeTopicIds = new Set(sections.map((s) => s.topics[0]?.id).filter(Boolean) as string[]);
   const totalTopics = sections.reduce((n, s) => n + s.topics.length, 0);
+  const lockedTopics = totalTopics - freeTopicIds.size;
 
   return (
     <div className="min-h-screen bg-gray-50">
       <main className="max-w-7xl mx-auto px-6 py-8">
-        {!isActive && (
-          <div className="mb-6 p-4 bg-teal-50 border border-teal-200 rounded-xl flex items-center gap-3">
-            <Lock className="h-5 w-5 text-teal-600 shrink-0" />
-            <p className="text-sm text-teal-800">
-              <span className="font-semibold">Free trial:</span> The first topic is unlocked so you can see how it works. Subscribe to access all {totalTopics} topics.
-            </p>
-          </div>
-        )}
+        {!isActive && <TrialBanner lockedTopics={lockedTopics} />}
         <h2 className="text-xl text-gray-700 mb-6">
           Click on a section below to start a Pre-Reg quiz!
         </h2>
@@ -145,13 +140,49 @@ export default function DashboardPage() {
                 key={topic.id}
                 topic={topic}
                 sectionId={section.id}
-                locked={!isActive && topic.id !== freeTopicId}
+                locked={!isActive && !freeTopicIds.has(topic.id)}
               />
             ))}
           </ProgressCard>
         ))}
         {!isActive && <SubscribeBanner />}
       </main>
+    </div>
+  );
+}
+
+function TrialBanner({ lockedTopics }: { lockedTopics: number }) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubscribe = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const url = await createCheckoutSession('pro');
+      window.location.href = url;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to start checkout.');
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="mb-6 p-4 bg-amber-50 border border-amber-300 rounded-xl flex flex-col sm:flex-row sm:items-center gap-3">
+      <Lock className="h-5 w-5 text-amber-600 shrink-0" />
+      <p className="text-sm text-amber-900 flex-1">
+        <span className="font-semibold">Free trial:</span> One topic per section is unlocked.{' '}
+        {lockedTopics} topics are locked — subscribe to access the full question bank.
+        {error && <span className="block text-red-600 mt-1">{error}</span>}
+      </p>
+      <button
+        onClick={handleSubscribe}
+        disabled={loading}
+        className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-white text-sm font-semibold rounded-lg transition-colors"
+      >
+        {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+        Subscribe — £99
+      </button>
     </div>
   );
 }

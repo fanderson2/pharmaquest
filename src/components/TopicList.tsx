@@ -72,31 +72,35 @@ export default function TopicList({ topic, sectionId, locked = false }: TopicLis
   return (
     <div className="mt-2">
       <div
-        className={`flex items-center justify-between p-3 bg-white rounded-lg transition-colors ${
+        className={`flex items-center justify-between p-3 rounded-lg transition-colors ${
           locked
-            ? 'opacity-60 cursor-default'
-            : `cursor-pointer hover:bg-gray-50 ${topicMatches ? 'bg-teal-50 ring-2 ring-teal-200' : ''}`
+            ? 'bg-gray-100 cursor-default border border-gray-200'
+            : `bg-white cursor-pointer hover:bg-gray-50 ${topicMatches ? 'bg-teal-50 ring-2 ring-teal-200' : ''}`
         }`}
         onClick={locked ? undefined : () => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center gap-2">
-          {isExpanded ? (
+          {locked ? (
+            <Lock className="h-5 w-5 text-gray-400 shrink-0" />
+          ) : isExpanded ? (
             <ChevronDown className="h-5 w-5 text-teal-600" />
           ) : (
             <ChevronRight className="h-5 w-5 text-teal-600" />
           )}
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-medium">{highlightMatch(topic.title)}</span>
+              <span className={`font-medium ${locked ? 'text-gray-400' : 'text-gray-900'}`}>
+                {highlightMatch(topic.title)}
+              </span>
             </div>
-            <div className="text-sm text-teal-600">
-              {completedQuestions} / {totalQuestions} Questions complete
+            <div className={`text-sm ${locked ? 'text-gray-400' : 'text-teal-600'}`}>
+              {locked ? 'Subscribe to unlock' : `${completedQuestions} / ${totalQuestions} Questions complete`}
             </div>
           </div>
         </div>
         {locked ? (
-          <span className="flex items-center gap-1.5 px-4 py-1.5 text-sm text-gray-400 bg-gray-100 rounded-full">
-            <Lock className="w-3.5 h-3.5" />
+          <span className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-500 bg-gray-200 rounded-full border border-gray-300">
+            <Lock className="w-3 h-3" />
             Locked
           </span>
         ) : (

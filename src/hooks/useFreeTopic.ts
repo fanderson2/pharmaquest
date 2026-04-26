@@ -1,29 +1,33 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
-// Module-level cache so the DB is only queried once per session.
-let _cached: string | null = null;
+// Module-level cache — one Set per session, keyed by first topic_id per section.
+let _cached: Set<string> | null = null;
 
-/** Returns the topic_id of the one free trial topic (first in section/topic order). */
-export function useFreeTopic(): string | null {
-  const [freeTopicId, setFreeTopicId] = useState<string | null>(_cached);
+/** Returns the Set of free trial topic_ids (first topic of each section). Null while loading. */
+export function useFreeTopic(): Set<string> | null {
+  const [freeTopicIds, setFreeTopicIds] = useState<Set<string> | null>(_cached);
 
   useEffect(() => {
     if (_cached) return;
     supabase
       .from('topics')
-      .select('topic_id')
+      .select('section_id, topic_id')
       .order('section_id', { ascending: true })
       .order('topic_id', { ascending: true })
-      .limit(1)
-      .single()
       .then(({ data }) => {
-        if (data?.topic_id) {
-          _cached = data.topic_id;
-          setFreeTopicId(data.topic_id);
+        const ids = new Set<string>();
+        const seen = new Set<string>();
+        for (const row of data ?? []) {
+          if (!seen.has(row.section_id)) {
+            seen.add(row.section_id);
+            ids.add(row.topic_id);
+          }
         }
+        _cached = ids;
+        setFreeTopicIds(ids);
       });
   }, []);
 
-  return freeTopicId;
+  return freeTopicIds;
 }

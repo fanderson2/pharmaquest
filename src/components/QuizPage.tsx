@@ -43,7 +43,7 @@ export default function QuizPage() {
   // Redirect non-subscribers away from locked topics
   useEffect(() => {
     if (subLoading || isActive || freeTopicId === null) return;
-    if (topic && topic !== freeTopicId) {
+    if (topic && !freeTopicId.has(topic)) {
       navigate('/dashboard', { replace: true });
     }
   }, [subLoading, isActive, freeTopicId, topic, navigate]);
