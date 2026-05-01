@@ -15,7 +15,24 @@ const UK_PHARMACY_SCHOOLS = [
   'Robert Gordon University', 'School of Pharmacy (UCL)',
   'Sunderland University', 'University of East Anglia',
   'University of Reading', 'University of Strathclyde',
+  'International or Other',
 ];
+
+function generateExamMonths(): { value: string; label: string }[] {
+  const months: { value: string; label: string }[] = [];
+  const now = new Date();
+  const names = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  for (let i = 0; i < 30; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    months.push({
+      value: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+      label: `${names[d.getMonth()]} ${d.getFullYear()}`,
+    });
+  }
+  return months;
+}
+
+const EXAM_MONTHS = generateExamMonths();
 
 export default function OnboardingPage() {
   const navigate = useNavigate();
@@ -39,7 +56,7 @@ export default function OnboardingPage() {
     fetchProfile(user.id).then((profile) => {
       if (profile?.full_name) setFormData((prev) => ({ ...prev, full_name: profile.full_name! }));
       if (profile?.university) setFormData((prev) => ({ ...prev, university: profile.university! }));
-      if (profile?.exam_date) setFormData((prev) => ({ ...prev, exam_date: profile.exam_date! }));
+      if (profile?.exam_date) setFormData((prev) => ({ ...prev, exam_date: profile.exam_date!.slice(0, 7) }));
     });
   }, [user]);
 
@@ -56,7 +73,7 @@ export default function OnboardingPage() {
       await upsertProfile(user.id, {
         full_name: formData.full_name.trim() || null,
         university: formData.university.trim() || 'not_provided',
-        exam_date: formData.exam_date || null,
+        exam_date: formData.exam_date ? `${formData.exam_date}-01` : null,
       });
       navigate('/dashboard', { replace: true });
     } catch (err) {
@@ -143,7 +160,7 @@ export default function OnboardingPage() {
                     <GraduationCap className="h-6 w-6 text-teal-600" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-gray-900">Where do you study?</h2>
+                    <h2 className="text-xl font-bold text-gray-900">Where did you study?</h2>
                     <p className="text-sm text-gray-500">Your university or placement site.</p>
                   </div>
                 </div>
@@ -182,12 +199,17 @@ export default function OnboardingPage() {
                   </div>
                 </div>
 
-                <input
-                  type="date" autoFocus
-                  value={formData.exam_date} onChange={set('exam_date')}
-                  min={new Date().toISOString().split('T')[0]}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-gray-900"
-                />
+                <select
+                  autoFocus
+                  value={formData.exam_date}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, exam_date: e.target.value }))}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-gray-900 bg-white"
+                >
+                  <option value="">Select a month…</option>
+                  {EXAM_MONTHS.map((m) => (
+                    <option key={m.value} value={m.value}>{m.label}</option>
+                  ))}
+                </select>
 
                 {error && (
                   <p className="mt-2 text-sm text-red-600">{error}</p>

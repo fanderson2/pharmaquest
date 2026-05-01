@@ -1,9 +1,11 @@
 import React, { createContext, useContext, useState } from 'react';
 import type { Question } from '../types/question';
 import { fetchQuestionsForTopic, fetchQuestionsForTopicAndSubtopic } from '../services/questionService';
-import { useSRS } from '../hooks/useSRS';
-import { useProgress } from '../hooks/useProgress';
-import { useAuth } from '../context/AuthContext';
+
+export interface IncorrectAnswer {
+  question: Question;
+  selectedAnswer: string;
+}
 
 interface QuizContextType {
   questions: Question[];
@@ -14,6 +16,7 @@ interface QuizContextType {
   hasNextQuestion: boolean;
   correctAnswers: number;
   isQuizComplete: boolean;
+  incorrectAnswers: IncorrectAnswer[];
   setQuestions: (questions: Question[]) => void;
   setSelectedAnswer: (answer: string) => void;
   submitAnswer: () => void;
@@ -31,10 +34,7 @@ export function QuizProvider({ children }: { children: React.ReactNode }) {
   const [isAnswerSubmitted, setIsAnswerSubmitted] = useState(false);
   const [correctAnswers, setCorrectAnswers] = useState(0);
   const [isQuizComplete, setIsQuizComplete] = useState(false);
-  const { getDueQuestions } = useSRS();
-  const { progress } = useProgress();
-  const { user } = useAuth();
-
+  const [incorrectAnswers, setIncorrectAnswers] = useState<IncorrectAnswer[]>([]);
   const currentQuestion = questions[currentQuestionIndex] || null;
   const hasNextQuestion = currentQuestionIndex < questions.length - 1;
 
@@ -52,6 +52,8 @@ export function QuizProvider({ children }: { children: React.ReactNode }) {
       setIsAnswerSubmitted(true);
       if (selectedAnswer === currentQuestion.correctAnswer) {
         setCorrectAnswers(prev => prev + 1);
+      } else {
+        setIncorrectAnswers(prev => [...prev, { question: currentQuestion, selectedAnswer }]);
       }
     }
   };
@@ -72,40 +74,16 @@ export function QuizProvider({ children }: { children: React.ReactNode }) {
     setIsAnswerSubmitted(false);
     setCorrectAnswers(0);
     setIsQuizComplete(false);
+    setIncorrectAnswers([]);
   };
 
   const getQuestionsForTopic = async (topic: string, subtopic?: string): Promise<Question[]> => {
     try {
-      // Fetch questions from Supabase
       const allTopicQuestions = subtopic
         ? await fetchQuestionsForTopicAndSubtopic(topic, subtopic)
         : await fetchQuestionsForTopic(topic);
-      
-      if (allTopicQuestions.length === 0) {
-        return [];
-      }
 
-      // Filter out correctly answered questions for logged-in users
-      const availableQuestions = allTopicQuestions.filter(question => {
-        if (!user) return true;
-
-        const topicKey = `${topic}_${topic}_questions`;
-        const topicProgress = progress[topicKey] || {};
-        const questionProgress = topicProgress[question.id];
-
-        return !questionProgress || !questionProgress.correct;
-      });
-
-      // Get due questions based on SRS
-      const questionIds = availableQuestions.map(q => q.id);
-      const dueQuestionIds = getDueQuestions ? getDueQuestions(questionIds) : questionIds;
-      
-      const dueQuestions = dueQuestionIds.length > 0
-        ? availableQuestions.filter(q => dueQuestionIds.includes(q.id))
-        : availableQuestions;
-
-      // Randomize the order
-      return shuffleArray(dueQuestions);
+      return shuffleArray(allTopicQuestions);
     } catch (error) {
       console.error('Error fetching questions:', error);
       return [];
@@ -121,6 +99,7 @@ export function QuizProvider({ children }: { children: React.ReactNode }) {
     hasNextQuestion,
     correctAnswers,
     isQuizComplete,
+    incorrectAnswers,
     setQuestions,
     setSelectedAnswer,
     submitAnswer,

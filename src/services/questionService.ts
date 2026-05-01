@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { Question } from '../types/question';
+import { questionBank } from '../data/questionBank';
 
 export interface QuizAttemptPayload {
   user_id: string;
@@ -16,61 +17,14 @@ export async function recordQuizAttempt(attempt: QuizAttemptPayload): Promise<vo
 }
 
 export async function fetchQuestionsForTopic(topicId: string): Promise<Question[]> {
-  const { data, error } = await supabase
-    .from('question_table')
-    .select('*')
-    .eq('topic_id', topicId);
-
-  if (error) throw error;
-
-  return data.map(row => ({
-    id: row.question_id,
-    text: row.question_text,
-    options: [
-      row.option_1,
-      row.option_2,
-      row.option_3,
-      row.option_4,
-      row.option_5
-    ].filter(Boolean), // Remove null/empty options
-    correctAnswer: row.correct_answer,
-    explanation: row.explanation
-  }));
-}
-
-export async function getDailyAttemptCount(userId: string): Promise<number> {
-  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-  const { count } = await supabase
-    .from('quiz_attempts')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', userId)
-    .gte('attempted_at', since);
-  return count ?? 0;
+  return questionBank[topicId] ?? [];
 }
 
 export async function fetchQuestionsForTopicAndSubtopic(
   topicId: string,
   subtopic: string
 ): Promise<Question[]> {
-  const { data, error } = await supabase
-    .from('question_table')
-    .select('*')
-    .eq('topic_id', topicId)
-    .ilike('question_text', `%${subtopic}%`);
-
-  if (error) throw error;
-
-  return data.map(row => ({
-    id: row.question_id,
-    text: row.question_text,
-    options: [
-      row.option_1,
-      row.option_2,
-      row.option_3,
-      row.option_4,
-      row.option_5
-    ].filter(Boolean),
-    correctAnswer: row.correct_answer,
-    explanation: row.explanation
-  }));
+  const all = questionBank[topicId] ?? [];
+  const lower = subtopic.toLowerCase();
+  return all.filter(q => q.text.toLowerCase().includes(lower));
 }

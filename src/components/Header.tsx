@@ -1,9 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, User, X, LogOut, Trophy, Settings2 } from 'lucide-react';
+import { Search, User, X, LogOut, Settings2 } from 'lucide-react';
 import Logo from './Logo';
-import StreakBadge from './StreakBadge';
-import XPBar from './XPBar';
 import { useSearch } from '../context/SearchContext';
 import { useAuth } from '../context/AuthContext';
 
@@ -29,13 +27,13 @@ export default function Header() {
   return (
     <header className="bg-white py-4 px-6 shadow-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <Link to={user ? '/dashboard' : '/'} className="flex items-center gap-2">
             <Logo />
-            <h1 className="text-2xl font-bold">PharmaQuest</h1>
+            <h1 className="text-lg sm:text-2xl font-bold">PharmaQuest</h1>
           </Link>
 
-          <div className="flex items-center gap-4 ml-auto">
+          <div className="flex items-center gap-2 sm:gap-4 ml-auto">
             {user && (
               <>
                 {/* Search bar — desktop */}
@@ -75,25 +73,11 @@ export default function Header() {
             )}
 
             {user ? (
-              <div className="flex items-center gap-3">
-                {/* Gamification widgets */}
-                <StreakBadge />
-                <div className="hidden sm:block">
-                  <XPBar />
-                </div>
-
+              <div className="flex items-center gap-2 sm:gap-3">
                 <div className="hidden md:block text-right">
                   <p className="text-xs text-gray-400">Signed in as</p>
                   <p className="text-sm font-medium text-gray-900 max-w-[160px] truncate">{displayName}</p>
                 </div>
-                <Link
-                  to="/leaderboard"
-                  title="Leaderboard"
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-full text-gray-600 hover:text-amber-600 hover:bg-amber-50 transition-colors"
-                >
-                  <Trophy className="h-4 w-4" />
-                  <span className="hidden md:inline text-sm font-medium">Leaderboard</span>
-                </Link>
                 <Link
                   to="/settings"
                   title="Settings"
@@ -104,7 +88,7 @@ export default function Header() {
                 <button
                   onClick={handleSignOut}
                   title="Sign out"
-                  className="flex items-center gap-2 px-4 py-2 rounded-full text-white bg-teal-600 hover:bg-teal-700 transition-colors"
+                  className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full text-white bg-teal-600 hover:bg-teal-700 transition-colors"
                 >
                   <LogOut className="h-4 w-4" />
                   <span className="hidden md:inline text-sm">Sign Out</span>

@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Info, AlertTriangle, Zap, CalendarDays } from 'lucide-react';
+import { Info, CalendarDays } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useProfile } from '../context/ProfileContext';
 import { useSubscription } from '../hooks/useSubscription';
@@ -12,7 +11,6 @@ import {
   type ReadinessPoint,
   type BreakdownFactor,
 } from '../services/readinessService';
-import { fetchFocusQuestions } from '../services/heatmapService';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -255,45 +253,6 @@ function ExamCountdown({ examDate }: { examDate: string | null }) {
   );
 }
 
-// ─── Drop banner ──────────────────────────────────────────────────────────────
-
-function DropBanner({ userId }: { userId: string }) {
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-
-  const handleFocus = async () => {
-    setLoading(true);
-    try {
-      const questions = await fetchFocusQuestions(userId, 20);
-      if (questions.length > 0) {
-        navigate('/quiz/__focus__', { state: { questions } });
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="flex items-center gap-3 mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm">
-      <AlertTriangle className="h-4 w-4 text-red-500 shrink-0" />
-      <p className="flex-1 text-red-800">
-        Your readiness has dropped this week —{' '}
-        <span className="font-semibold">focus mode recommended</span>
-      </p>
-      <button
-        onClick={handleFocus}
-        disabled={loading}
-        className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-500 hover:bg-red-600 disabled:opacity-60 text-white text-xs font-semibold rounded-lg transition-colors"
-      >
-        {loading
-          ? <span className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
-          : <Zap className="h-3 w-3" />}
-        Focus Mode
-      </button>
-    </div>
-  );
-}
-
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function ExamReadinessGauge() {
@@ -331,23 +290,6 @@ export default function ExamReadinessGauge() {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [showInfo]);
-
-  // Drop detection: compare current score vs entry closest to 7 days ago
-  const weekAgoScore = (() => {
-    if (history.length === 0) return null;
-    const target = new Date();
-    target.setDate(target.getDate() - 7);
-    const targetStr = target.toISOString().slice(0, 10);
-    // Find the closest entry on or before 7 days ago
-    const older = history.filter((h) => h.calculated_at.slice(0, 10) <= targetStr);
-    return older.length > 0 ? older[older.length - 1].score : null;
-  })();
-
-  const showDropBanner =
-    score !== null &&
-    score > 0 &&
-    weekAgoScore !== null &&
-    score - weekAgoScore <= -10;
 
   if (!isPro) {
     return (
@@ -409,9 +351,6 @@ export default function ExamReadinessGauge() {
           )}
         </div>
       </div>
-
-      {/* Drop banner */}
-      {showDropBanner && user && <DropBanner userId={user.id} />}
 
       {/* Body: gauge left, info right */}
       <div className="flex flex-col md:flex-row items-center gap-6">

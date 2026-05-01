@@ -1,67 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, AlertCircle, CheckCircle2, ArrowRight, Flag, Lock, Loader2, Sparkles } from 'lucide-react';
+import { ArrowLeft, AlertCircle, CheckCircle2, ArrowRight, Flag } from 'lucide-react';
 import { useQuiz } from '../context/QuizContext';
 import { useAuth } from '../context/AuthContext';
-import { useProfile } from '../context/ProfileContext';
 import { useSubscription } from '../hooks/useSubscription';
 import { useFreeTopic } from '../hooks/useFreeTopic';
 import { useSRS } from '../hooks/useSRS';
 import { useProgress } from '../hooks/useProgress';
 import QuizSummary from './QuizSummary';
-import MilestoneToast from './MilestoneToast';
 import { sections } from '../data/sections';
-import { getAvailableQuestionCount } from '../utils/questionCounter';
-import { recordQuizAttempt, getDailyAttemptCount } from '../services/questionService';
-import { createCheckoutSession } from '../services/stripeService';
+import { recordQuizAttempt } from '../services/questionService';
 import type { Question } from '../types/question';
-
-const MILESTONE_XP: Record<number, number> = { 7: 50, 30: 100, 100: 250 };
-const DAILY_FREE_LIMIT = 20;
-
-function DailyCapModal() {
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
-
-  const handleUpgrade = async () => {
-    setLoading(true);
-    try {
-      const url = await createCheckoutSession('pro');
-      window.location.href = url;
-    } catch {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-lg max-w-sm w-full p-8 text-center">
-        <div className="w-14 h-14 rounded-2xl bg-amber-50 flex items-center justify-center mx-auto mb-4">
-          <Lock className="h-7 w-7 text-amber-500" />
-        </div>
-        <h2 className="text-xl font-bold text-gray-900 mb-2">Daily limit reached</h2>
-        <p className="text-sm text-gray-500 mb-6">
-          Free accounts can answer {DAILY_FREE_LIMIT} questions per day. Upgrade to Pro for
-          unlimited access to the full question bank.
-        </p>
-        <button
-          onClick={handleUpgrade}
-          disabled={loading}
-          className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-teal-600 hover:bg-teal-700 disabled:opacity-60 text-white font-semibold rounded-xl transition-colors mb-3"
-        >
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-          Get Pro — £9.99/mo
-        </button>
-        <button
-          onClick={() => navigate('/dashboard')}
-          className="w-full text-sm text-gray-500 hover:text-gray-700 py-2"
-        >
-          Back to dashboard
-        </button>
-      </div>
-    </div>
-  );
-}
 
 export default function QuizPage() {
   const { topic, subtopic } = useParams();
@@ -74,7 +23,7 @@ export default function QuizPage() {
   const freeTopicId = useFreeTopic();
   const { user } = useAuth();
   const { updateQuestionSRS } = useSRS();
-  const { updateProgress, updateQuestionStatus, progress } = useProgress();
+  const { updateProgress, updateQuestionStatus } = useProgress();
   const {
     questions,
     currentQuestion,
@@ -84,6 +33,7 @@ export default function QuizPage() {
     hasNextQuestion,
     correctAnswers,
     isQuizComplete,
+    incorrectAnswers,
     setQuestions,
     setSelectedAnswer,
     submitAnswer,
@@ -92,11 +42,8 @@ export default function QuizPage() {
     resetQuiz
   } = useQuiz();
 
-  const { profile, refreshProfile } = useProfile();
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [milestoneStreak, setMilestoneStreak] = useState<number | null>(null);
-  const [dailyCapHit, setDailyCapHit] = useState(false);
   const questionStartTimeRef = useRef<number>(Date.now());
 
   // Redirect non-subscribers away from locked topics (skip for focus mode)
@@ -118,19 +65,9 @@ export default function QuizPage() {
       setLoading(true);
       try {
         if (isFocusMode) {
-          // Questions pre-loaded by WeaknessHeatmap and passed via nav state
           const focusQuestions = (location.state as { questions?: import('../types/question').Question[] } | null)?.questions ?? [];
           setQuestions(focusQuestions);
         } else {
-          // Check daily cap for free users
-          if (!isPro && user) {
-            const count = await getDailyAttemptCount(user.id);
-            if (count >= DAILY_FREE_LIMIT) {
-              setDailyCapHit(true);
-              setLoading(false);
-              return;
-            }
-          }
           const quizQuestions = await getQuestionsForTopic(
             decodeURIComponent(topic),
             subtopic ? decodeURIComponent(subtopic) : undefined
@@ -160,8 +97,6 @@ export default function QuizPage() {
     try {
       const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
       const timeTaken = Math.round((Date.now() - questionStartTimeRef.current) / 1000);
-      const oldStreak = profile?.current_streak ?? 0;
-      // In focus mode use the question's own topicId; otherwise use the URL topic param
       const recordTopic = currentQuestion.topicId ?? topic ?? '__focus__';
 
       const ops: Promise<unknown>[] = [updateQuestionSRS(currentQuestion.id, isCorrect)];
@@ -184,16 +119,6 @@ export default function QuizPage() {
       }
 
       await Promise.all(ops);
-
-      // Refresh profile so streak/XP widgets update, and detect milestone
-      if (user) {
-        const newProfile = await refreshProfile();
-        const newStreak = newProfile?.current_streak ?? 0;
-        if (newStreak > oldStreak && newStreak in MILESTONE_XP) {
-          setMilestoneStreak(newStreak);
-        }
-      }
-
       submitAnswer();
     } finally {
       setSubmitting(false);
@@ -202,14 +127,11 @@ export default function QuizPage() {
 
   const handleNextQuestion = async () => {
     if (!isFocusMode && !hasNextQuestion && topic && section?.id && user) {
-      const availableQuestions = getAvailableQuestionCount(topic, progress, section.id, subtopic);
-      const progressPercentage = Math.round((correctAnswers / availableQuestions) * 100);
+      const progressPercentage = Math.round((correctAnswers / questions.length) * 100);
       await updateProgress(section.id, progressPercentage);
     }
     moveToNextQuestion();
   };
-
-  if (dailyCapHit) return <DailyCapModal />;
 
   if (loading) {
     return (
@@ -248,7 +170,8 @@ export default function QuizPage() {
     );
   }
 
-  const availableQuestions = getAvailableQuestionCount(topic!, progress, section?.id || '', subtopic);
+  const availableQuestions = questions.length;
+  const displayQuestionNumber = currentQuestionIndex + 1;
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6">
@@ -265,6 +188,7 @@ export default function QuizPage() {
           <QuizSummary
             totalQuestions={availableQuestions}
             correctAnswers={correctAnswers}
+            incorrectAnswers={incorrectAnswers}
             topic={decodeURIComponent(topic!)}
             subtopic={subtopic ? decodeURIComponent(subtopic) : undefined}
             showUpgrade={!isPro}
@@ -286,12 +210,14 @@ export default function QuizPage() {
                 <h1 className="text-xl md:text-2xl font-bold text-gray-800 mb-2 break-words">
                   {topic === '__smart__' ? '🧠 Smart Practice'
                     : topic === '__focus__' ? '⚡ Focus Mode'
-                    : (subtopic || topic)}
+                    : subtopic
+                    ? decodeURIComponent(subtopic)
+                    : section?.topics.find(t => t.id === topic)?.title ?? decodeURIComponent(topic ?? '')}
                 </h1>
                 <div className="h-1 w-24 bg-teal-500 rounded"></div>
               </div>
               <span className="text-sm md:text-base text-gray-500 whitespace-nowrap ml-4">
-                Question {currentQuestionIndex + 1} of {availableQuestions}
+                Question {displayQuestionNumber} of {availableQuestions}
               </span>
             </div>
 
@@ -422,13 +348,6 @@ export default function QuizPage() {
         )}
       </div>
 
-      {milestoneStreak !== null && (
-        <MilestoneToast
-          streak={milestoneStreak}
-          xpBonus={MILESTONE_XP[milestoneStreak] ?? 0}
-          onDismiss={() => setMilestoneStreak(null)}
-        />
-      )}
     </div>
   );
 }

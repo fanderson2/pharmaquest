@@ -83,8 +83,10 @@ Deno.serve(async (req) => {
 
     return json({ url: session.url })
   } catch (err) {
-    console.error('create-checkout-session error:', err)
-    return json({ error: 'Internal server error' }, 500)
+    const message = err instanceof Error ? err.message : String(err)
+    const stack   = err instanceof Error ? err.stack   : undefined
+    console.error('create-checkout-session error:', message, stack)
+    return json({ error: message, stack }, 500)
   }
 })
 

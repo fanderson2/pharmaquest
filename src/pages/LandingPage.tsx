@@ -32,8 +32,8 @@ export default function LandingPage() {
       {bannerVisible && (
         <div className="urgency-banner">
           <span className="urgency-text">
-            Founding member offer — first <strong>200 users</strong> get Pro for{' '}
-            <strong>£4.99/mo</strong>. Don't miss it.
+            Founding member offer — first <strong>200 users</strong> get lifetime Pro for{' '}
+            <strong>£99</strong> one-time. Don't miss it.
           </span>
           <button
             className="urgency-close"
@@ -93,7 +93,7 @@ export default function LandingPage() {
                 See How It Works
               </button>
             </div>
-            <p className="hero-note fade-in delay-4">Free tier always available · Cancel anytime</p>
+            <p className="hero-note fade-in delay-4">Free tier always available · One-time payment, no subscription</p>
           </div>
 
           <div className="hero-right fade-in delay-2">
@@ -117,8 +117,8 @@ export default function LandingPage() {
               </div>
               <div className="hero-review-card">
                 <p>
-                  "The streak system genuinely made me open the app every day — even when I
-                  didn't want to."
+                  "The exam readiness score showed me exactly where I was weak — I went from
+                  52% to 71% in four weeks."
                 </p>
                 <div className="reviewer-row">
                   <div className="reviewer-avatar">MA</div>
@@ -190,30 +190,6 @@ export default function LandingPage() {
               </p>
             </div>
             <div className="feat-card">
-              <div className="feat-icon">🔥</div>
-              <h3>Daily Streak System</h3>
-              <p>
-                Build a revision habit with daily XP, streaks, and rewards that make missing a
-                day feel genuinely costly.
-              </p>
-            </div>
-            <div className="feat-card">
-              <div className="feat-icon">📊</div>
-              <h3>Weakness Heatmap</h3>
-              <p>
-                Know exactly where you're losing marks before it's too late. Visual topic
-                breakdowns updated in real time.
-              </p>
-            </div>
-            <div className="feat-card">
-              <div className="feat-icon">🏆</div>
-              <h3>Trainee Leaderboard</h3>
-              <p>
-                See how you rank vs other pre-reg trainees nationwide. Healthy competition drives
-                consistency.
-              </p>
-            </div>
-            <div className="feat-card">
               <div className="feat-icon">🧠</div>
               <h3>Smart Practice Mode</h3>
               <p>
@@ -245,15 +221,12 @@ export default function LandingPage() {
             {/* FREE */}
             <div className="price-card">
               <div className="plan-name">Free</div>
-              <div className="plan-price">£0<span>/mo</span></div>
+              <div className="plan-price">£0</div>
               <div className="plan-desc">Always free. No card needed.</div>
               <ul className="plan-features">
-                <li>20 questions/day</li>
-                <li>Basic topic coverage</li>
+                <li>One topic per section unlocked</li>
+                <li>Full question explanations</li>
                 <li>Score tracking</li>
-                <li className="locked">Daily streak system</li>
-                <li className="locked">Weakness heatmap</li>
-                <li className="locked">Trainee leaderboard</li>
                 <li className="locked">Exam readiness score</li>
                 <li className="locked">Smart practice mode</li>
                 <li className="locked">Unlimited questions</li>
@@ -265,15 +238,12 @@ export default function LandingPage() {
 
             {/* PRO */}
             <div className="price-card featured">
-              <div className="featured-badge">Most popular</div>
+              <div className="featured-badge">Lifetime access</div>
               <div className="plan-name">Pro</div>
-              <div className="plan-price">£9.99<span>/mo</span></div>
-              <div className="plan-desc">£7.99/mo billed annually — save 20%</div>
+              <div className="plan-price">£99</div>
+              <div className="plan-desc">One-time payment. No subscription.</div>
               <ul className="plan-features">
-                <li>Unlimited questions</li>
-                <li>Daily streak system &amp; XP</li>
-                <li>Weakness heatmap</li>
-                <li>Trainee leaderboard</li>
+                <li>Unlimited questions — all topics</li>
                 <li>Exam readiness score</li>
                 <li>Smart practice mode</li>
                 <li>Full clinical scenarios</li>
@@ -281,7 +251,7 @@ export default function LandingPage() {
                 <li>Priority support</li>
               </ul>
               <button className="price-btn solid" onClick={() => navigate('/signup?plan=pro')}>
-                Get Pro — £9.99/mo
+                Get Pro — £99
               </button>
             </div>
           </div>
@@ -317,7 +287,7 @@ export default function LandingPage() {
           <button className="btn-hero" onClick={() => navigate('/signup')}>
             Start Free Today
           </button>
-          <p className="final-note">No credit card · Cancel anytime · Free tier forever</p>
+          <p className="final-note">No credit card to start · £99 one-time · Free tier forever</p>
         </div>
       </section>
 
