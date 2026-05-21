@@ -165,7 +165,7 @@ export default function QuizSummary({
           <Lock className="h-8 w-8 mx-auto mb-2 opacity-80" />
           <h3 className="font-bold text-lg mb-1">Want to keep going?</h3>
           <p className="text-teal-100 text-sm mb-4">
-            Subscribe for lifetime access to all 2,436 questions across every GPhC topic.
+            Subscribe for full access to all 2,436 questions across every GPhC topic.
           </p>
           {checkoutError && <p className="text-red-200 text-xs mb-3">{checkoutError}</p>}
           <button
@@ -174,7 +174,7 @@ export default function QuizSummary({
             className="bg-white text-teal-700 font-semibold px-6 py-2.5 rounded-full hover:bg-teal-50 disabled:opacity-60 transition-colors inline-flex items-center gap-2 text-sm"
           >
             {checkoutLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-            Subscribe — £99 Lifetime Access
+            Subscribe — £9.99/month
           </button>
         </div>
       )}

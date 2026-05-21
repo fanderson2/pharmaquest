@@ -66,7 +66,7 @@ export default function SignUpPage({ isUpgrade = false }: SignUpPageProps) {
         <div className="bg-white rounded-2xl shadow-xl p-8 max-w-lg mx-auto mb-12">
           <div className="flex items-center justify-center gap-2 text-2xl font-bold text-gray-900 mb-6">
             <CreditCard className="h-7 w-7 text-teal-600" />
-            <span>£99 — Lifetime Access</span>
+            <span>£9.99/month — Full Pro Access</span>
           </div>
 
           {checkoutError && (

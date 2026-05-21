@@ -189,7 +189,11 @@ export default function QuizPage() {
             totalQuestions={availableQuestions}
             correctAnswers={correctAnswers}
             incorrectAnswers={incorrectAnswers}
-            topic={decodeURIComponent(topic!)}
+            topic={
+              topic === '__smart__' ? 'Smart Practice'
+              : topic === '__focus__' ? 'Focus Mode'
+              : section?.topics.find(t => t.id === topic)?.title ?? decodeURIComponent(topic ?? '')
+            }
             subtopic={subtopic ? decodeURIComponent(subtopic) : undefined}
             showUpgrade={!isPro}
             onRetry={async () => {

@@ -102,7 +102,7 @@ export default function SmartPracticeCard() {
                 {upgrading
                   ? <Loader2 className="h-4 w-4 animate-spin" />
                   : <Sparkles className="h-4 w-4" />}
-                Unlock Smart Practice — £99
+                Unlock Smart Practice — £9.99/mo
               </button>
               {error && <p className="text-xs text-red-500">{error}</p>}
             </div>

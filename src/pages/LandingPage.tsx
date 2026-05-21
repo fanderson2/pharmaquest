@@ -32,8 +32,8 @@ export default function LandingPage() {
       {bannerVisible && (
         <div className="urgency-banner">
           <span className="urgency-text">
-            Founding member offer — first <strong>200 users</strong> get lifetime Pro for{' '}
-            <strong>£99</strong> one-time. Don't miss it.
+            Full Pro access — all 2,436 GPhC questions for just{' '}
+            <strong>£9.99/month</strong>. Cancel anytime.
           </span>
           <button
             className="urgency-close"
@@ -93,7 +93,7 @@ export default function LandingPage() {
                 See How It Works
               </button>
             </div>
-            <p className="hero-note fade-in delay-4">Free tier always available · One-time payment, no subscription</p>
+            <p className="hero-note fade-in delay-4">Free tier always available · £9.99/month · Cancel anytime</p>
           </div>
 
           <div className="hero-right fade-in delay-2">
@@ -238,10 +238,10 @@ export default function LandingPage() {
 
             {/* PRO */}
             <div className="price-card featured">
-              <div className="featured-badge">Lifetime access</div>
+              <div className="featured-badge">Most popular</div>
               <div className="plan-name">Pro</div>
-              <div className="plan-price">£99</div>
-              <div className="plan-desc">One-time payment. No subscription.</div>
+              <div className="plan-price">£9.99<span style={{ fontSize: '1rem', fontWeight: 400 }}>/mo</span></div>
+              <div className="plan-desc">Per month. Cancel anytime.</div>
               <ul className="plan-features">
                 <li>Unlimited questions — all topics</li>
                 <li>Exam readiness score</li>
@@ -251,7 +251,7 @@ export default function LandingPage() {
                 <li>Priority support</li>
               </ul>
               <button className="price-btn solid" onClick={() => navigate('/signup?plan=pro')}>
-                Get Pro — £99
+                Get Pro — £9.99/mo
               </button>
             </div>
           </div>
@@ -287,7 +287,7 @@ export default function LandingPage() {
           <button className="btn-hero" onClick={() => navigate('/signup')}>
             Start Free Today
           </button>
-          <p className="final-note">No credit card to start · £99 one-time · Free tier forever</p>
+          <p className="final-note">No credit card to start · £9.99/month · Free tier forever</p>
         </div>
       </section>
 

@@ -979,7 +979,7 @@ export const sections: Section[] = [
         ]
       },
       {
-        "id": "repsire",
+        "id": "respire",
         "title": "Respiratory Conditions",
         "subtopics": [
           "Cough (Dry and Productive)",

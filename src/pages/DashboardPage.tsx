@@ -2,13 +2,13 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Book, Pill, AlertTriangle, ShoppingBag, Scale, Stethoscope, Tablets,
-  Lock, Loader2, Brain, Sparkles, Activity, ArrowRight,
+  Lock, Loader2, Brain, Sparkles, Activity, ArrowRight, CheckCircle2, X, Crown,
 } from 'lucide-react';
 import ProgressCard from '../components/ProgressCard';
 import TopicList from '../components/TopicList';
-import { CheckoutProcessing } from '../components/SignUpPage';
 import { useAuth } from '../context/AuthContext';
 import { useSubscription } from '../hooks/useSubscription';
+import { useSearch } from '../context/SearchContext';
 import { fetchProfile } from '../services/profileService';
 import { fetchTopics } from '../services/topicService';
 import { createCheckoutSession } from '../services/stripeService';
@@ -49,14 +49,25 @@ function Spinner({ message }: { message: string }) {
 
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const { isPro, loading: subLoading } = useSubscription();
+  const { searchQuery } = useSearch();
+  const isSearching = searchQuery.trim().length > 0;
 
   const [sections, setSections] = useState<Section[]>([]);
   const [topicsLoading, setTopicsLoading] = useState(true);
   const [topicsError, setTopicsError] = useState<string | null>(null);
   const [profileChecked, setProfileChecked] = useState(false);
+  const [showSuccessBanner, setShowSuccessBanner] = useState(false);
+
+  // Show success banner once on return from Stripe, then clear the URL param
+  useEffect(() => {
+    if (searchParams.get('checkout') === 'success') {
+      setShowSuccessBanner(true);
+      setSearchParams({}, { replace: true });
+    }
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -89,7 +100,6 @@ export default function DashboardPage() {
   }, [profileChecked]);
 
   if (subLoading || !profileChecked) return <Spinner message="Loading your account..." />;
-  if (searchParams.get('checkout') === 'success' && !isPro) return <CheckoutProcessing />;
   if (topicsLoading) return <Spinner message="Loading topics..." />;
 
   if (topicsError) {
@@ -120,15 +130,52 @@ export default function DashboardPage() {
   const totalTopics = sections.reduce((n, s) => n + s.topics.length, 0);
   const lockedTopics = totalTopics - freeTopicIds.size;
 
+  const searchLower = searchQuery.toLowerCase();
+  const visibleSections = isSearching
+    ? sections.filter((s) =>
+        s.topics.some(
+          (t) =>
+            t.title.toLowerCase().includes(searchLower) ||
+            t.subtopics.some((sub) => sub.toLowerCase().includes(searchLower))
+        )
+      )
+    : sections;
+
   return (
     <div className="min-h-screen bg-gray-50">
       <main className="max-w-7xl mx-auto px-6 py-8">
-        {!isPro && <TrialBanner lockedTopics={lockedTopics} />}
-        <InsightsRow />
-        <h2 className="text-xl text-gray-700 mb-6">
-          Click on a section below to start a Pre-Reg quiz!
-        </h2>
-        {sections.map((section) => (
+        {showSuccessBanner && (
+          <div className="mb-6 flex items-start gap-3 bg-green-50 border border-green-300 rounded-xl p-4">
+            <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+            <p className="text-sm text-green-900 flex-1 font-medium">
+              Successfully Subscribed — You now have a Full Pro Account and access to all quizzes and questions! Good luck.
+            </p>
+            <button onClick={() => setShowSuccessBanner(false)} className="text-green-600 hover:text-green-800 shrink-0">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+        {isPro && (
+          <div className="mb-6 flex items-center gap-3 bg-teal-600 rounded-xl px-5 py-3">
+            <Crown className="h-5 w-5 text-teal-100 shrink-0" />
+            <p className="text-sm font-semibold text-white">
+              Paid Tier — Access to all Quizzes &amp; Features
+            </p>
+          </div>
+        )}
+        {!isSearching && !isPro && <TrialBanner lockedTopics={lockedTopics} />}
+        {!isSearching && <InsightsRow />}
+        {!isSearching && (
+          <h2 className="text-xl text-gray-700 mb-6">
+            Click on a section below to start a Pre-Reg quiz!
+          </h2>
+        )}
+        {isSearching && visibleSections.length === 0 && (
+          <p className="text-gray-500 text-sm py-8 text-center">
+            No topics match "{searchQuery}"
+          </p>
+        )}
+        {visibleSections.map((section) => (
           <ProgressCard
             key={section.id}
             icon={sectionIcons[section.id]}
@@ -146,7 +193,7 @@ export default function DashboardPage() {
             ))}
           </ProgressCard>
         ))}
-        {!isPro && <SubscribeBanner />}
+        {!isSearching && !isPro && <SubscribeBanner />}
       </main>
     </div>
   );
@@ -343,7 +390,7 @@ function TrialBanner({ lockedTopics }: { lockedTopics: number }) {
       <button onClick={handleSubscribe} disabled={loading}
         className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-white text-sm font-semibold rounded-lg transition-colors">
         {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-        Subscribe — £99
+        Subscribe — £9.99/mo
       </button>
     </div>
   );
@@ -372,13 +419,13 @@ function SubscribeBanner() {
       </div>
       <h3 className="text-2xl font-bold mb-2">Unlock the Full Question Bank</h3>
       <p className="text-teal-100 mb-6 max-w-sm mx-auto text-sm leading-relaxed">
-        You've had a taste — subscribe for lifetime access to every section, topic, and all 2,436 questions. One payment, no recurring fees.
+        You've had a taste — subscribe for full access to every section, topic, and all 2,436 questions.
       </p>
       {error && <p className="text-red-200 text-sm mb-4">{error}</p>}
       <button onClick={handleSubscribe} disabled={loading}
         className="bg-white text-teal-700 font-semibold px-8 py-3 rounded-full hover:bg-teal-50 disabled:opacity-60 transition-colors inline-flex items-center gap-2">
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-        Subscribe — £99 Lifetime Access
+        Subscribe — £9.99/month
       </button>
     </div>
   );
