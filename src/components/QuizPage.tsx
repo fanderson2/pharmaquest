@@ -18,7 +18,7 @@ export default function QuizPage() {
   const location = useLocation();
   // Both special modes use pre-loaded questions from router state and skip
   // subscription / section-progress logic.
-  const isFocusMode = topic === '__focus__' || topic === '__smart__';
+  const isFocusMode = topic === '__focus__' || topic === '__smart__' || topic === '__exam__';
   const { isPro, loading: subLoading } = useSubscription();
   const freeTopicId = useFreeTopic();
   const { user } = useAuth();
@@ -41,6 +41,8 @@ export default function QuizPage() {
     moveToNextQuestion,
     resetQuiz
   } = useQuiz();
+
+  const examTitle = (location.state as { sectionTitle?: string } | null)?.sectionTitle;
 
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -65,7 +67,7 @@ export default function QuizPage() {
       setLoading(true);
       try {
         if (isFocusMode) {
-          const focusQuestions = (location.state as { questions?: import('../types/question').Question[] } | null)?.questions ?? [];
+          const focusQuestions = (location.state as { questions?: import('../types/question').Question[]; sectionTitle?: string } | null)?.questions ?? [];
           setQuestions(focusQuestions);
         } else {
           const quizQuestions = await getQuestionsForTopic(
@@ -103,6 +105,9 @@ export default function QuizPage() {
 
       if (!isFocusMode && section?.id && topic) {
         ops.push(updateQuestionStatus(section.id, topic, currentQuestion.id, isCorrect));
+      } else if (topic === '__exam__' && currentQuestion.topicId) {
+        const examSectionId = currentQuestion.topicId.startsWith('ecal_') ? 'ECAL' : 'CLN';
+        ops.push(updateQuestionStatus(examSectionId, currentQuestion.topicId, currentQuestion.id, isCorrect));
       }
 
       if (user) {
@@ -126,9 +131,14 @@ export default function QuizPage() {
   };
 
   const handleNextQuestion = async () => {
-    if (!isFocusMode && !hasNextQuestion && topic && section?.id && user) {
+    if (!hasNextQuestion && user) {
       const progressPercentage = Math.round((correctAnswers / questions.length) * 100);
-      await updateProgress(section.id, progressPercentage);
+      if (!isFocusMode && section?.id && topic) {
+        await updateProgress(section.id, progressPercentage);
+      } else if (topic === '__exam__' && questions[0]?.topicId) {
+        const examSectionId = questions[0].topicId.startsWith('ecal_') ? 'ECAL' : 'CLN';
+        await updateProgress(examSectionId, progressPercentage);
+      }
     }
     moveToNextQuestion();
   };
@@ -192,6 +202,7 @@ export default function QuizPage() {
             topic={
               topic === '__smart__' ? 'Smart Practice'
               : topic === '__focus__' ? 'Focus Mode'
+              : topic === '__exam__' ? (examTitle ?? 'Exam Practice')
               : section?.topics.find(t => t.id === topic)?.title ?? decodeURIComponent(topic ?? '')
             }
             subtopic={subtopic ? decodeURIComponent(subtopic) : undefined}
@@ -214,6 +225,7 @@ export default function QuizPage() {
                 <h1 className="text-xl md:text-2xl font-bold text-gray-800 mb-2 break-words">
                   {topic === '__smart__' ? '🧠 Smart Practice'
                     : topic === '__focus__' ? '⚡ Focus Mode'
+                    : topic === '__exam__' ? (examTitle ?? 'Exam Practice')
                     : subtopic
                     ? decodeURIComponent(subtopic)
                     : section?.topics.find(t => t.id === topic)?.title ?? decodeURIComponent(topic ?? '')}
@@ -250,15 +262,15 @@ export default function QuizPage() {
                     >
                       <div className="flex items-start gap-3">
                         <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
-                          selectedAnswer === option
-                            ? isAnswerSubmitted
-                              ? option === currentQuestion.correctAnswer
-                                ? 'bg-green-500'
-                                : 'bg-red-500'
+                          isAnswerSubmitted
+                            ? option === currentQuestion.correctAnswer
+                              ? 'bg-green-500'
+                              : selectedAnswer === option
+                              ? 'bg-red-500'
                               : 'bg-teal-600'
-                            : 'bg-gray-200'
+                            : 'bg-teal-600'
                         }`}>
-                          <span className="text-white text-sm">
+                          <span className="text-xs font-semibold text-white">
                             {String.fromCharCode(65 + index)}
                           </span>
                         </div>

@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { Section, Topic } from '../types/topic';
+import { questionBank } from '../data/questionBank';
 
 interface TopicRecord {
   section_id: string;
@@ -11,10 +12,10 @@ interface TopicRecord {
 
 export async function fetchTopics(): Promise<Section[]> {
   try {
-    const [topicsResult, rpcResult] = await Promise.all([
-      supabase.from('topics').select('*').order('section_id, topic_id, subtopic'),
-      supabase.rpc('get_question_topic_ids'),
-    ]);
+    const topicsResult = await supabase
+      .from('topics')
+      .select('*')
+      .order('section_id, topic_id, subtopic');
 
     if (topicsResult.error) {
       console.error('Supabase error:', topicsResult.error);
@@ -26,12 +27,8 @@ export async function fetchTopics(): Promise<Section[]> {
       return [];
     }
 
-    // Only show topics that have at least one question.
-    // If the RPC fails (e.g. migration not yet applied), show all topics rather than none.
-    const topicsWithQuestions: Set<string> | null =
-      rpcResult.error || !rpcResult.data?.length
-        ? null
-        : new Set<string>(rpcResult.data.map((r: { topic_id: string }) => r.topic_id));
+    // Only show topics that have at least one question in the local question bank.
+    const topicsWithQuestions = new Set<string>(Object.keys(questionBank));
 
     // Transform the flat data into the hierarchical structure
     const sectionsMap = new Map<string, {

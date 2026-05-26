@@ -16,9 +16,11 @@ interface TopicListProps {
   topic: Topic;
   sectionId: string;
   locked?: boolean;
+  variant?: 'teal' | 'gold';
 }
 
-export default function TopicList({ topic, sectionId, locked = false }: TopicListProps) {
+export default function TopicList({ topic, sectionId, locked = false, variant = 'teal' }: TopicListProps) {
+  const isGold = variant === 'gold';
   const navigate = useNavigate();
   const [isExpanded, setIsExpanded] = useState(false);
   const [hoveredItem, setHoveredItem] = useState<number | null>(null);
@@ -75,7 +77,7 @@ export default function TopicList({ topic, sectionId, locked = false }: TopicLis
         className={`flex items-center justify-between p-3 rounded-lg transition-colors ${
           locked
             ? 'bg-gray-100 cursor-default border border-gray-200'
-            : `bg-white cursor-pointer hover:bg-gray-50 ${topicMatches ? 'bg-teal-50 ring-2 ring-teal-200' : ''}`
+            : `bg-white cursor-pointer hover:bg-gray-50 ${topicMatches ? (isGold ? 'bg-purple-50 ring-2 ring-purple-200' : 'bg-teal-50 ring-2 ring-teal-200') : ''}`
         }`}
         onClick={locked ? undefined : () => setIsExpanded(!isExpanded)}
       >
@@ -83,9 +85,9 @@ export default function TopicList({ topic, sectionId, locked = false }: TopicLis
           {locked ? (
             <Lock className="h-5 w-5 text-gray-400 shrink-0" />
           ) : isExpanded ? (
-            <ChevronDown className="h-5 w-5 text-teal-600" />
+            <ChevronDown className={`h-5 w-5 ${isGold ? 'text-[rgb(96,13,148)]' : 'text-teal-600'}`} />
           ) : (
-            <ChevronRight className="h-5 w-5 text-teal-600" />
+            <ChevronRight className={`h-5 w-5 ${isGold ? 'text-[rgb(96,13,148)]' : 'text-teal-600'}`} />
           )}
           <div>
             <div className="flex items-center gap-2">
@@ -93,7 +95,7 @@ export default function TopicList({ topic, sectionId, locked = false }: TopicLis
                 {highlightMatch(topic.title)}
               </span>
             </div>
-            <div className={`text-sm ${locked ? 'text-gray-400' : 'text-teal-600'}`}>
+            <div className={`text-sm ${locked ? 'text-gray-400' : isGold ? 'text-[rgb(96,13,148)]' : 'text-teal-600'}`}>
               {locked ? 'Subscribe to unlock' : `${completedQuestions} / ${totalQuestions} Questions complete`}
             </div>
           </div>
@@ -105,7 +107,7 @@ export default function TopicList({ topic, sectionId, locked = false }: TopicLis
           </span>
         ) : (
           <button
-            className="px-4 py-1.5 text-sm font-medium text-teal-600 bg-white rounded-full border border-teal-600 hover:bg-teal-50 transition-all"
+            className={`px-4 py-1.5 text-sm font-medium bg-white rounded-full border transition-all ${isGold ? 'text-[rgb(96,13,148)] border-[rgb(96,13,148)] hover:bg-purple-50' : 'text-teal-600 border-teal-600 hover:bg-teal-50'}`}
             onClick={(e) => {
               e.stopPropagation();
               handleStartQuiz();
@@ -132,7 +134,9 @@ export default function TopicList({ topic, sectionId, locked = false }: TopicLis
               >
                 <div className="flex items-center gap-2">
                   <div className={`w-2 h-2 rounded-full ${
-                    hoveredItem === index ? 'bg-teal-600' : 'bg-teal-500'
+                    isGold
+                      ? hoveredItem === index ? 'bg-[rgb(96,13,148)]' : 'bg-purple-300'
+                      : hoveredItem === index ? 'bg-teal-600' : 'bg-teal-500'
                   }`} />
                   <span className="text-gray-700">{highlightMatch(item)}</span>
                 </div>

@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Book, Pill, AlertTriangle, ShoppingBag, Scale, Stethoscope, Tablets,
   Lock, Loader2, Brain, Sparkles, Activity, ArrowRight, CheckCircle2, X, Crown,
+  FlaskConical, Calculator, Trophy,
 } from 'lucide-react';
 import ProgressCard from '../components/ProgressCard';
 import TopicList from '../components/TopicList';
@@ -15,25 +16,41 @@ import { createCheckoutSession } from '../services/stripeService';
 import { fetchSmartQuiz } from '../services/smartPracticeService';
 import { fetchReadinessScore } from '../services/readinessService';
 import { Section } from '../types/topic';
+import { questionBank } from '../data/questionBank';
 
 const sectionIcons: Record<string, JSX.Element> = {
-  BNF: <Book className="h-6 w-6 text-teal-600" />,
-  T100: <Pill className="h-6 w-6 text-teal-600" />,
-  HRM: <AlertTriangle className="h-6 w-6 text-teal-600" />,
-  OTC: <ShoppingBag className="h-6 w-6 text-teal-600" />,
-  MRT: <Stethoscope className="h-6 w-6 text-teal-600" />,
-  CAL: <Scale className="h-6 w-6 text-teal-600" />,
-  COM: <Tablets className="h-6 w-6 text-teal-600" />,
+  BNF:  <Book           className="h-6 w-6 text-teal-600"  />,
+  T100: <Pill           className="h-6 w-6 text-teal-600"  />,
+  HRM:  <AlertTriangle  className="h-6 w-6 text-teal-600"  />,
+  OTC:  <ShoppingBag    className="h-6 w-6 text-teal-600"  />,
+  MRT:  <Stethoscope    className="h-6 w-6 text-teal-600"  />,
+  CAL:  <Scale          className="h-6 w-6 text-teal-600"  />,
+  COM:  <Tablets        className="h-6 w-6 text-teal-600"  />,
+  CLN:  <FlaskConical   className="h-5 w-5 text-[rgb(96,13,148)]" />,
+  ECAL: <Calculator     className="h-5 w-5 text-[rgb(96,13,148)]" />,
 };
 
+const GOLD_SECTIONS = new Set(['CLN', 'ECAL']);
+
+function shuffled<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 const sectionDescriptions: Record<string, string> = {
-  BNF: 'British National Formulary chapter overview and key medications',
+  BNF:  'British National Formulary chapter overview and key medications',
   T100: 'Essential medications every pharmacy student must know',
-  HRM: 'Critical medications requiring special attention and monitoring',
-  OTC: 'Common conditions and medications available without prescription',
-  MRT: 'Essential guidelines and standards for pharmacy practice',
-  CAL: 'Mathematical skills essential for pharmaceutical practice',
-  COM: 'Common over-the-counter medications and their uses',
+  HRM:  'Critical medications requiring special attention and monitoring',
+  OTC:  'Common conditions and medications available without prescription',
+  MRT:  'Essential guidelines and standards for pharmacy practice',
+  CAL:  'Mathematical skills essential for pharmaceutical practice',
+  COM:  'Common over-the-counter medications and their uses',
+  CLN:  'Exam-style clinical scenario questions covering all major GPhC topics',
+  ECAL: 'Exam-style pharmaceutical calculation questions across all calculation types',
 };
 
 function Spinner({ message }: { message: string }) {
@@ -126,20 +143,26 @@ export default function DashboardPage() {
     );
   }
 
-  const freeTopicIds = new Set(sections.map((s) => s.topics[0]?.id).filter(Boolean) as string[]);
-  const totalTopics = sections.reduce((n, s) => n + s.topics.length, 0);
-  const lockedTopics = totalTopics - freeTopicIds.size;
+  const regularSections = sections.filter((s) => !GOLD_SECTIONS.has(s.id));
+  const freeTopicIds = new Set(regularSections.map((s) => s.topics[0]?.id).filter(Boolean) as string[]);
+  const lockedTopics = regularSections.reduce((n, s) => n + s.topics.length, 0) - freeTopicIds.size;
+  const lockedQuestions = regularSections
+    .flatMap((s) => s.topics)
+    .filter((t) => !freeTopicIds.has(t.id))
+    .reduce((n, t) => n + (questionBank[t.id]?.length ?? 0), 0);
 
   const searchLower = searchQuery.toLowerCase();
-  const visibleSections = isSearching
+  const visibleSections = (isSearching
     ? sections.filter((s) =>
+        !GOLD_SECTIONS.has(s.id) &&
         s.topics.some(
           (t) =>
             t.title.toLowerCase().includes(searchLower) ||
             t.subtopics.some((sub) => sub.toLowerCase().includes(searchLower))
         )
       )
-    : sections;
+    : sections
+  ).filter((s) => isPro || !GOLD_SECTIONS.has(s.id));
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -156,32 +179,58 @@ export default function DashboardPage() {
           </div>
         )}
         {isPro && (
-          <div className="mb-6 flex items-center gap-3 bg-teal-600 rounded-xl px-5 py-3">
-            <Crown className="h-5 w-5 text-teal-100 shrink-0" />
+          <div className="mb-6 flex items-center gap-3 bg-amber-700 rounded-xl px-5 py-3">
+            <Crown className="h-5 w-5 text-amber-100 shrink-0" />
             <p className="text-sm font-semibold text-white">
               Paid Tier — Access to all Quizzes &amp; Features
             </p>
           </div>
         )}
-        {!isSearching && !isPro && <TrialBanner lockedTopics={lockedTopics} />}
-        {!isSearching && <InsightsRow />}
-        {!isSearching && (
-          <h2 className="text-xl text-gray-700 mb-6">
-            Click on a section below to start a Pre-Reg quiz!
-          </h2>
-        )}
+        {!isSearching && !isPro && <TrialBanner lockedTopics={lockedTopics} lockedQuestions={lockedQuestions} />}
+        {!isSearching && isPro && <InsightsRow />}
         {isSearching && visibleSections.length === 0 && (
           <p className="text-gray-500 text-sm py-8 text-center">
             No topics match "{searchQuery}"
           </p>
         )}
-        {visibleSections.map((section) => (
+
+        {/* ── Exam Practice sections (gold) ──────────────────────────── */}
+        {visibleSections.some((s) => GOLD_SECTIONS.has(s.id)) && (
+          <>
+            <div className="mb-4 flex items-center gap-3 bg-[rgb(96,13,148)] rounded-xl px-5 py-3">
+              <Trophy className="h-5 w-5 text-white/80 shrink-0" />
+              <p className="text-sm font-semibold text-white">Exam Practice — Full GPhC-style exam questions</p>
+            </div>
+            <ExamSectionsCarousel
+              sections={visibleSections.filter((s) => GOLD_SECTIONS.has(s.id))}
+              isPro={isPro}
+              onStart={(section) => {
+                const allQs = shuffled(
+                  section.topics.flatMap(t =>
+                    (questionBank[t.id] ?? []).map(q => ({ ...q, topicId: t.id }))
+                  )
+                );
+                navigate('/quiz/__exam__', { state: { questions: allQs, sectionTitle: section.title } });
+              }}
+            />
+            {visibleSections.some((s) => !GOLD_SECTIONS.has(s.id)) && (
+              <div className="my-6 flex items-center gap-3 bg-teal-600 rounded-xl px-5 py-3">
+                <Book className="h-5 w-5 text-white/80 shrink-0" />
+                <p className="text-sm font-semibold text-white">Topic Quizzes — Practice your Weak Areas</p>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ── Regular topic sections (teal) ──────────────────────────── */}
+        {visibleSections.filter((s) => !GOLD_SECTIONS.has(s.id)).map((section) => (
           <ProgressCard
             key={section.id}
             icon={sectionIcons[section.id]}
             title={section.title}
-            description={sectionDescriptions[section.id]}
+            description={sectionDescriptions[section.id] ?? ''}
             sectionId={section.id}
+            variant="teal"
           >
             {section.topics.map((topic) => (
               <TopicList
@@ -189,6 +238,7 @@ export default function DashboardPage() {
                 topic={topic}
                 sectionId={section.id}
                 locked={!isPro && !freeTopicIds.has(topic.id)}
+                variant="teal"
               />
             ))}
           </ProgressCard>
@@ -247,12 +297,9 @@ function SmartWidget() {
   return (
     <div className={CARD}>
       <div className="flex items-center gap-2.5 mb-1">
-        <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${isPro ? 'bg-teal-600' : 'bg-gray-100'}`}>
-          <Brain className={`h-4 w-4 ${isPro ? 'text-white' : 'text-gray-400'}`} />
-        </div>
+        <Brain className={`h-5 w-5 shrink-0 ${isPro ? 'text-amber-700' : 'text-gray-400'}`} />
         <p className="text-sm font-bold text-gray-800">Smart Practice</p>
       </div>
-      <p className="text-[11px] text-gray-400 mb-2">Spaced repetition · Pro</p>
       <p className="text-xs text-gray-500 mb-3 leading-relaxed">
         Personalised quizzes weighted to your weakest areas, built on spaced repetition science.
       </p>
@@ -289,9 +336,7 @@ function ReadinessWidget() {
     <div className={CARD}>
       <div className="flex items-start justify-between gap-2 mb-1">
         <div className="flex items-center gap-2.5">
-          <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${isPro ? 'bg-teal-50' : 'bg-gray-100'}`}>
-            <Activity className={`h-4 w-4 ${isPro ? 'text-teal-600' : 'text-gray-400'}`} />
-          </div>
+          <Activity className={`h-5 w-5 shrink-0 ${isPro ? 'text-amber-700' : 'text-gray-400'}`} />
           <p className="text-sm font-bold text-gray-800">Exam Readiness</p>
         </div>
         {hasScore && (
@@ -301,7 +346,6 @@ function ReadinessWidget() {
           <span className="w-10 h-4 rounded bg-gray-100 animate-pulse shrink-0 mt-1" />
         )}
       </div>
-      <p className="text-[11px] text-gray-400 mb-2">Daily score · Pro</p>
       <p className="text-xs text-gray-500 mb-3 leading-relaxed">
         A live daily score showing how prepared you are for your GPhC assessment, based on accuracy and activity.
       </p>
@@ -316,9 +360,97 @@ function ReadinessWidget() {
   );
 }
 
+function ExamSectionsCarousel({
+  sections,
+  isPro,
+  onStart,
+}: {
+  sections: Section[];
+  isPro: boolean;
+  onStart: (section: Section) => void;
+}) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const isDragging = useRef(false);
+  const dragStartX = useRef(0);
+  const scrollStartLeft = useRef(0);
+
+  const handleScroll = () => {
+    if (!scrollRef.current) return;
+    const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+    const maxScroll = scrollWidth - clientWidth;
+    const idx = maxScroll > 0 ? Math.round(scrollLeft / maxScroll) : 0;
+    setActiveIndex(Math.min(Math.max(idx, 0), sections.length - 1));
+  };
+
+  const scrollTo = (idx: number) => {
+    if (!scrollRef.current) return;
+    const { scrollWidth, clientWidth } = scrollRef.current;
+    scrollRef.current.scrollTo({ left: (scrollWidth - clientWidth) * idx, behavior: 'smooth' });
+  };
+
+  const onMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!scrollRef.current) return;
+    isDragging.current = true;
+    dragStartX.current = e.pageX;
+    scrollStartLeft.current = scrollRef.current.scrollLeft;
+  };
+  const onMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDragging.current || !scrollRef.current) return;
+    e.preventDefault();
+    scrollRef.current.scrollLeft = scrollStartLeft.current - (e.pageX - dragStartX.current);
+  };
+  const stopDrag = () => { isDragging.current = false; };
+
+  return (
+    <div>
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        onMouseDown={onMouseDown}
+        onMouseMove={onMouseMove}
+        onMouseUp={stopDrag}
+        onMouseLeave={stopDrag}
+        className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-1 lg:grid lg:grid-cols-2 lg:overflow-visible [scrollbar-width:none] [&::-webkit-scrollbar]:hidden cursor-grab active:cursor-grabbing select-none"
+      >
+        {sections.map((section) => (
+          <div key={section.id} className="snap-start shrink-0 w-[82%] lg:w-auto">
+            <ProgressCard
+              icon={sectionIcons[section.id]}
+              title={section.title}
+              description={sectionDescriptions[section.id] ?? ''}
+              sectionId={section.id}
+              variant="gold"
+              examLocked={!isPro}
+              onStartExamQuiz={isPro ? () => onStart(section) : undefined}
+            />
+          </div>
+        ))}
+      </div>
+      {sections.length > 1 && (
+        <div className="flex justify-center gap-2 mt-3 lg:hidden">
+          {sections.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => scrollTo(i)}
+              aria-label={`Go to card ${i + 1}`}
+              className={`rounded-full transition-all duration-200 ${
+                activeIndex === i ? 'w-5 h-1.5 bg-gray-900' : 'w-1.5 h-1.5 bg-gray-300 hover:bg-gray-500'
+              }`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function InsightsRow() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const isDragging = useRef(false);
+  const dragStartX = useRef(0);
+  const scrollStartLeft = useRef(0);
 
   const handleScroll = () => {
     if (!scrollRef.current) return;
@@ -335,12 +467,29 @@ function InsightsRow() {
     scrollRef.current.scrollTo({ left: maxScroll * index, behavior: 'smooth' });
   };
 
+  const onMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!scrollRef.current) return;
+    isDragging.current = true;
+    dragStartX.current = e.pageX;
+    scrollStartLeft.current = scrollRef.current.scrollLeft;
+  };
+  const onMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDragging.current || !scrollRef.current) return;
+    e.preventDefault();
+    scrollRef.current.scrollLeft = scrollStartLeft.current - (e.pageX - dragStartX.current);
+  };
+  const stopDrag = () => { isDragging.current = false; };
+
   return (
     <div className="mb-6">
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-1 lg:grid lg:grid-cols-2 lg:overflow-visible [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        onMouseDown={onMouseDown}
+        onMouseMove={onMouseMove}
+        onMouseUp={stopDrag}
+        onMouseLeave={stopDrag}
+        className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-1 lg:grid lg:grid-cols-2 lg:overflow-visible [scrollbar-width:none] [&::-webkit-scrollbar]:hidden cursor-grab active:cursor-grabbing select-none"
       >
         <SmartWidget />
         <ReadinessWidget />
@@ -363,7 +512,7 @@ function InsightsRow() {
 
 // ─── Banners ──────────────────────────────────────────────────────────────────
 
-function TrialBanner({ lockedTopics }: { lockedTopics: number }) {
+function TrialBanner({ lockedTopics, lockedQuestions }: { lockedTopics: number; lockedQuestions: number }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -380,13 +529,17 @@ function TrialBanner({ lockedTopics }: { lockedTopics: number }) {
   };
 
   return (
-    <div className="mb-6 p-4 bg-amber-50 border border-amber-300 rounded-xl flex flex-col sm:flex-row sm:items-center gap-3">
-      <Lock className="h-5 w-5 text-amber-600 shrink-0" />
-      <p className="text-sm text-amber-900 flex-1">
-        <span className="font-semibold">Free trial:</span> One topic per section is unlocked.{' '}
-        {lockedTopics} topics are locked — subscribe to access the full question bank.
-        {error && <span className="block text-red-600 mt-1">{error}</span>}
-      </p>
+    <div className="mb-6 p-5 bg-amber-50 border border-amber-300 rounded-xl flex flex-col sm:flex-row sm:items-center gap-5">
+      <Lock className="h-5 w-5 text-amber-600 shrink-0 hidden sm:block" />
+      <div className="flex-1 text-sm text-amber-900">
+        <p className="font-semibold mb-3">Free tier — subscribe to unlock:</p>
+        <ul className="space-y-2 list-disc list-outside pl-4 text-amber-800">
+          <li><span className="font-medium">Exam Practice</span> — full GPhC-style clinical scenario &amp; calculation questions</li>
+          <li><span className="font-medium">Smart Practice</span> — personalised spaced repetition quizzes, plus {lockedTopics.toLocaleString()} locked topics &amp; {lockedQuestions.toLocaleString()} questions</li>
+          <li><span className="font-medium">Exam Readiness Score</span> — daily score tracking your GPhC preparation</li>
+        </ul>
+        {error && <p className="text-red-600 mt-2">{error}</p>}
+      </div>
       <button onClick={handleSubscribe} disabled={loading}
         className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-white text-sm font-semibold rounded-lg transition-colors">
         {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}

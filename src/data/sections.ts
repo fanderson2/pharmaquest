@@ -1216,5 +1216,137 @@ export const sections: Section[] = [
         ]
       }
     ]
+  },
+  {
+    "id": "CLN",
+    "title": "Clinical Scenario Exam Questions",
+    "topics": [
+      {
+        "id": "cln_cardiovascular",
+        "title": "Cardiovascular Scenarios",
+        "subtopics": []
+      },
+      {
+        "id": "cln_central_nervous_system",
+        "title": "Central Nervous System Scenarios",
+        "subtopics": []
+      },
+      {
+        "id": "cln_endocrine",
+        "title": "Endocrine Scenarios",
+        "subtopics": []
+      },
+      {
+        "id": "cln_infection",
+        "title": "Infection Scenarios",
+        "subtopics": []
+      },
+      {
+        "id": "cln_gastro_intestinal",
+        "title": "Gastro-intestinal Scenarios",
+        "subtopics": []
+      },
+      {
+        "id": "cln_respiratory",
+        "title": "Respiratory Scenarios",
+        "subtopics": []
+      },
+      {
+        "id": "cln_musculoskeletal",
+        "title": "Musculoskeletal Scenarios",
+        "subtopics": []
+      },
+      {
+        "id": "cln_skin",
+        "title": "Skin Scenarios",
+        "subtopics": []
+      },
+      {
+        "id": "cln_nutrition_blood",
+        "title": "Nutrition and Blood Scenarios",
+        "subtopics": []
+      },
+      {
+        "id": "cln_obstetrics_gynae_gu",
+        "title": "Obstetrics, Gynaecology and Genito-urinary Scenarios",
+        "subtopics": []
+      },
+      {
+        "id": "cln_eye_ent",
+        "title": "Eye, Ear, Nose and Oropharynx Scenarios",
+        "subtopics": []
+      },
+      {
+        "id": "cln_vaccines",
+        "title": "Vaccines and Immunisation Scenarios",
+        "subtopics": []
+      },
+      {
+        "id": "cln_malignant_immunosuppression",
+        "title": "Malignant Disease and Immunosuppression Scenarios",
+        "subtopics": []
+      },
+      {
+        "id": "cln_drug_toxicity",
+        "title": "Drug Toxicity Scenarios",
+        "subtopics": []
+      },
+      {
+        "id": "cln_law_governance",
+        "title": "Law, Governance and Regulation",
+        "subtopics": []
+      }
+    ]
+  },
+  {
+    "id": "ECAL",
+    "title": "Exam Calculation Questions",
+    "topics": [
+      {
+        "id": "ecal_concentrations",
+        "title": "Concentration Calculations",
+        "subtopics": []
+      },
+      {
+        "id": "ecal_dilutions",
+        "title": "Dilution Calculations",
+        "subtopics": []
+      },
+      {
+        "id": "ecal_displacement_volumes",
+        "title": "Displacement Volume Calculations",
+        "subtopics": []
+      },
+      {
+        "id": "ecal_infusion_rates",
+        "title": "Infusion Rate Calculations",
+        "subtopics": []
+      },
+      {
+        "id": "ecal_medical_statistics",
+        "title": "Medical Statistics Calculations",
+        "subtopics": []
+      },
+      {
+        "id": "ecal_pharmacoeconomics",
+        "title": "Pharmacoeconomic Calculations",
+        "subtopics": []
+      },
+      {
+        "id": "ecal_pharmacokinetics",
+        "title": "Pharmacokinetic Calculations",
+        "subtopics": []
+      },
+      {
+        "id": "ecal_quantities_to_supply",
+        "title": "Quantities to Supply Calculations",
+        "subtopics": []
+      },
+      {
+        "id": "ecal_dose_regimens",
+        "title": "Dose and Dosage Regimens",
+        "subtopics": []
+      }
+    ]
   }
 ];
